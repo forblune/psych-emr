@@ -71,8 +71,16 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
 - 검증 스크립트: scratchpad의 `00_supabase_shim.sql` + `verify_rls.sql` (세션 일시적).
 - 미검증(서비스 레이어, SQL 아님): 호스팅 GoTrue 이메일 인증 흐름, PostgREST 임베딩 응답 shape, 네트워크. → 본인 Supabase에 올린 뒤 로그인 1회로 확인 권장.
 
+## 전체 테스트 (2026-06-22)
+- **빌드**: `npm run build` 무에러 (89→ 모듈)
+- **DB/RLS**: 신규 클러스터에 0001→0002→seed 재적용 무에러 + RLS 매트릭스 재통과(담당의 7 / 타의사 0 / admin 7 / anon 0)
+- **E2E (Playwright/Chromium, mock 모드)**: `npm test` → **5/5 통과, 콘솔 에러 0**
+  - 렌더(KPI6·대기열7·정수민·추이차트) / 환자 클릭 전환 / 탭4 / 테마 토글 / 정렬 세그먼트
+- **배포 사이트 렌더**: https://forblune.github.io/psych-emr/ 헤드리스 확인 — KPI6·행7·정수민·다크·에러0
+- 테스트 코드: `tests/e2e.spec.js`, `playwright.config.js`
+
 ## 아직 안 된 것
-- 검색창·새로고침·"신규 진료 시작"·정렬 세그먼트 = **UI만, 동작 미구현**
+- 검색창·새로고침·"신규 진료 시작" = **UI만, 동작 미구현** (정렬 세그먼트는 on 상태만 토글)
 - 쓰기 기능 없음(노트/처방 작성). 0002 하단에 RLS 쓰기 정책 *예시*만 주석.
 - Realtime 구독 없음(대기열 수동).
 - KPI는 큐레이션 값(집계 뷰 아님).
