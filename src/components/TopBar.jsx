@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Icon from './Icon'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
@@ -19,10 +19,23 @@ function useClock() {
   return time
 }
 
-export default function TopBar({ clinic, doctor }) {
+export default function TopBar({ clinic, doctor, search, onSearch }) {
   const { theme, toggle } = useTheme()
   const { signOut } = useAuth()
   const time = useClock()
+  const searchRef = useRef(null)
+
+  // Ctrl/Cmd+K focuses search.
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        searchRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   return (
     <header className="topbar">
@@ -40,7 +53,19 @@ export default function TopBar({ clinic, doctor }) {
       </div>
       <div className="topsearch">
         <Icon name="search" size={14} />
-        <input type="text" placeholder="환자명 · 차트번호 · 주민번호 앞자리로 검색  (Ctrl+K)" />
+        <input
+          ref={searchRef}
+          type="text"
+          value={search}
+          onChange={(e) => onSearch(e.target.value)}
+          onKeyDown={(e) => e.key === 'Escape' && onSearch('')}
+          placeholder="환자명 · 차트번호 · 진단(F코드)으로 검색  (Ctrl+K)"
+        />
+        {search && (
+          <button className="topsearch-clear" onClick={() => onSearch('')} aria-label="검색 지우기" title="지우기">
+            ×
+          </button>
+        )}
       </div>
       <div className="top-right">
         <button className="icobtn" onClick={toggle} title="테마 전환" aria-label="테마 전환">

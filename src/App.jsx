@@ -23,6 +23,7 @@ export default function App() {
   const { session, loading } = useAuth()
   const [data, setData] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
+  const [search, setSearch] = useState('')
 
   // With Supabase, RLS needs an authenticated session before any read.
   const authed = !isSupabaseConfigured || Boolean(session)
@@ -59,7 +60,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <TopBar clinic={data.clinic} doctor={data.doctor} />
+      <TopBar clinic={data.clinic} doctor={data.doctor} search={search} onSearch={setSearch} />
       <Sidebar navGroups={data.navGroups} systemStatus={data.systemStatus} />
       <main className="main">
         <div className="crumb">
@@ -82,7 +83,12 @@ export default function App() {
         <KpiStrip kpis={data.kpis} />
 
         <div className="content">
-          <PatientQueue patients={data.queue} selectedId={selectedId} onSelect={setSelectedId} />
+          <PatientQueue
+            patients={data.queue}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            search={search}
+          />
           <PatientDetail patient={selected} />
           <Schedule schedule={data.schedule} />
         </div>

@@ -79,8 +79,12 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
 - **배포 사이트 렌더**: https://forblune.github.io/psych-emr/ 헤드리스 확인 — KPI6·행7·정수민·다크·에러0
 - 테스트 코드: `tests/e2e.spec.js`, `playwright.config.js`
 
+## 구현 완료 (실동작)
+- **검색** — TopBar 입력으로 대기열 필터(이름·차트번호·F코드·주민번호). Ctrl+K 포커스, Esc/× 초기화, 빈 상태 표시. 상태는 App→TopBar/PatientQueue로 흐름.
+- **정렬** — 대기순(대기시간 desc, 상담중 상단) / 접수순(접수시각 asc) / 위험도(고위험→중등도→일반). `PatientQueue.jsx` COMPARATORS.
+
 ## 아직 안 된 것
-- 검색창·새로고침·"신규 진료 시작" = **UI만, 동작 미구현** (정렬 세그먼트는 on 상태만 토글)
+- 새로고침·"신규 진료 시작" 버튼 = **UI만, 동작 미구현**
 - 쓰기 기능 없음(노트/처방 작성). 0002 하단에 RLS 쓰기 정책 *예시*만 주석.
 - Realtime 구독 없음(대기열 수동).
 - KPI는 큐레이션 값(집계 뷰 아님).

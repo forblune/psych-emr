@@ -62,10 +62,39 @@ test.describe('정신과 EMR 대시보드 (mock 모드)', () => {
     await expect(html).toHaveAttribute('data-theme', 'dark')
   })
 
-  test('대기열 정렬 세그먼트 토글(UI 상태)', async ({ page }) => {
+  test('검색 — 이름으로 대기열 필터', async ({ page }) => {
     await page.goto('/')
-    const seg = page.locator('.queue .seg button', { hasText: '위험도' })
-    await seg.click()
-    await expect(seg).toHaveClass(/on/)
+    await expect(page.locator('.qrow')).toHaveCount(7)
+
+    await page.locator('.topsearch input').fill('강하늘')
+    await expect(page.locator('.qrow')).toHaveCount(1)
+    await expect(page.locator('.qrow')).toContainText('강하늘')
+
+    // 지우기 버튼 → 다시 전체
+    await page.locator('.topsearch-clear').click()
+    await expect(page.locator('.qrow')).toHaveCount(7)
+  })
+
+  test('검색 — F코드/차트번호로도 필터, 없으면 빈 상태', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('.topsearch input').fill('F20')
+    await expect(page.locator('.qrow')).toHaveCount(1)
+    await expect(page.locator('.qrow .dx')).toHaveText('F20.0')
+
+    await page.locator('.topsearch input').fill('없는환자zzz')
+    await expect(page.locator('.qrow')).toHaveCount(0)
+    await expect(page.locator('.queue-empty')).toBeVisible()
+  })
+
+  test('정렬 — 위험도순은 고위험을 맨 위로', async ({ page }) => {
+    await page.goto('/')
+
+    // 위험도 정렬: 첫 행 = 고위험(강하늘)
+    await page.locator('.queue .seg button', { hasText: '위험도' }).click()
+    await expect(page.locator('.qrow').first()).toContainText('강하늘')
+
+    // 접수순 정렬: 첫 행 = 가장 먼저 접수(정수민 13:34)
+    await page.locator('.queue .seg button', { hasText: '접수순' }).click()
+    await expect(page.locator('.qrow').first()).toContainText('정수민')
   })
 })
