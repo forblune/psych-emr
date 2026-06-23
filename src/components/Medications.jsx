@@ -5,11 +5,12 @@ import { expiryThreshold, medFlags } from '../data/api'
 const CLASSES = ['SSRI', 'SNRI', '항정신병', '기분조절제', '벤조디아제핀', '수면제', '정신자극제', '기타']
 const UNITS = ['정', '캡슐', '시럽', '주사', '패치']
 const FILTERS = ['전체', '재고부족', '유효임박', '향정신성']
+const LOG_KIND_CLS = { 입고: 'b-done', 불출: 'b-new', 조제: 'b-wait' }
 
 // 분류 칩 색: 향정신성 계열은 경고색, 그 외 중립.
 const CLASS_CLS = { 벤조디아제핀: 'lg-pro', 수면제: 'lg-pro', 정신자극제: 'lg-pro' }
 
-export default function Medications({ medications, summary, clinicDate, onAdd, onAdjust, onDelete }) {
+export default function Medications({ medications, summary, logs = [], clinicDate, onAdd, onAdjust, onDelete }) {
   const threshold = expiryThreshold(clinicDate)
   const [filter, setFilter] = useState('전체')
   const [adding, setAdding] = useState(false)
@@ -93,7 +94,7 @@ export default function Medications({ medications, summary, clinicDate, onAdd, o
       </div>
 
       <div className="search-screen">
-        <section className="card" style={{ flex: 1, minHeight: 0 }}>
+        <section className="card med-list-card" style={{ flex: 1, minHeight: 0 }}>
           <div className="hd">
             <h3>약품 목록</h3>
             <span className="meta">{rows.length}품목</span>
@@ -195,6 +196,38 @@ export default function Medications({ medications, summary, clinicDate, onAdd, o
                     <td>
                       <button className="row-act danger" onClick={() => onDelete(idx)}>삭제</button>
                     </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="card med-log-card">
+          <div className="hd">
+            <h3>입 · 출고 이력</h3>
+            <span className="meta">{logs.length}건</span>
+          </div>
+          <div className="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>시각</th><th>약품</th><th>구분</th>
+                  <th className="ta-r">수량</th><th className="ta-r">변경 후</th><th>사유 · 담당</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.length === 0 && <tr><td colSpan={6} className="queue-empty">입·출고 이력이 없습니다.</td></tr>}
+                {logs.map((l, i) => (
+                  <tr key={l.id ?? l.at + i}>
+                    <td className="ref num">{l.at}</td>
+                    <td><span className="pname">{l.med}</span></td>
+                    <td><span className={`badge ${LOG_KIND_CLS[l.kind] || 'b-wait'}`}>{l.kind}</span></td>
+                    <td className="ta-r num" style={{ fontWeight: 700, color: l.kind === '입고' ? 'var(--ok)' : 'var(--crit)' }}>
+                      {l.kind === '입고' ? '+' : '−'}{l.qty.toLocaleString()}
+                    </td>
+                    <td className="ta-r num">{l.after.toLocaleString()}</td>
+                    <td className="ref">{l.reason}{l.actor ? ` · ${l.actor}` : ''}</td>
                   </tr>
                 ))}
               </tbody>

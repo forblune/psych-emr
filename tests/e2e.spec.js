@@ -130,7 +130,9 @@ test.describe('정신과 EMR 대시보드 (mock 모드)', () => {
     await page.goto('/')
     await page.locator('.nav-item', { hasText: '약품 · 재고' }).click()
     await expect(page.locator('.crumb h1')).toHaveText('약품 · 재고')
-    await expect(page.locator('tbody tr')).toHaveCount(11)
+    await expect(page.locator('.med-list-card tbody tr')).toHaveCount(11)
+    // 입·출고 이력 시드 6건
+    await expect(page.locator('.med-log-card tbody tr')).toHaveCount(6)
 
     const low = page.locator('.kpi').filter({ has: page.locator('.lab', { hasText: '재고부족' }) }).locator('.val')
     await expect(low).toHaveText('2')
@@ -139,11 +141,11 @@ test.describe('정신과 EMR 대시보드 (mock 모드)', () => {
 
     // 재고부족 필터 → 2품목, 모두 '재고부족' 배지
     await page.locator('.seg button', { hasText: '재고부족' }).click()
-    await expect(page.locator('tbody tr')).toHaveCount(2)
-    await expect(page.locator('tbody tr .badge', { hasText: '재고부족' })).toHaveCount(2)
+    await expect(page.locator('.med-list-card tbody tr')).toHaveCount(2)
+    await expect(page.locator('.med-list-card tbody tr .badge', { hasText: '재고부족' })).toHaveCount(2)
   })
 
-  test('약품·재고 — 입고/불출로 재고 변동, 재고부족 해소', async ({ page }) => {
+  test('약품·재고 — 입고/불출로 재고 변동 + 이력 기록', async ({ page }) => {
     await page.goto('/')
     await page.locator('.nav-item', { hasText: '약품 · 재고' }).click()
 
@@ -151,24 +153,29 @@ test.describe('정신과 EMR 대시보드 (mock 모드)', () => {
     await expect(low).toHaveText('2')
 
     // 쿠에티아핀(재고 90 / 안전 120) 입고 50 → 140, 재고부족 1건으로 감소
-    const row = page.locator('tbody tr', { hasText: '쿠에티아핀 25mg' })
+    const row = page.locator('.med-list-card tbody tr', { hasText: '쿠에티아핀 25mg' })
     await row.locator('.stock-qty').fill('50')
     await row.locator('.row-act', { hasText: '입고' }).click()
     await expect(row.locator('td.ta-r.num').first()).toHaveText('140')
     await expect(row.locator('.badge', { hasText: '재고부족' })).toHaveCount(0)
     await expect(low).toHaveText('1')
+    // 입·출고 이력 최상단에 입고 기록
+    const logTop = page.locator('.med-log-card tbody tr').first()
+    await expect(logTop).toContainText('쿠에티아핀 25mg')
+    await expect(logTop).toContainText('입고')
 
-    // 불출 50 → 90, 다시 재고부족
+    // 불출 50 → 90, 다시 재고부족 + 이력에 불출 기록
     await row.locator('.stock-qty').fill('50')
     await row.locator('.row-act', { hasText: '불출' }).click()
     await expect(row.locator('td.ta-r.num').first()).toHaveText('90')
     await expect(low).toHaveText('2')
+    await expect(page.locator('.med-log-card tbody tr').first()).toContainText('불출')
   })
 
   test('약품·재고 — 약품 등록 후 목록·총 품목 반영', async ({ page }) => {
     await page.goto('/')
     await page.locator('.nav-item', { hasText: '약품 · 재고' }).click()
-    await expect(page.locator('tbody tr')).toHaveCount(11)
+    await expect(page.locator('.med-list-card tbody tr')).toHaveCount(11)
 
     await page.locator('.btn.primary', { hasText: '약품 등록' }).click()
     await page.locator('.note-field:has(span:text-is("약품명 *")) input').fill('미르타자핀 15mg')
@@ -176,21 +183,39 @@ test.describe('정신과 EMR 대시보드 (mock 모드)', () => {
     await page.locator('.note-field:has(span:text-is("재고 *")) input').fill('300')
     await page.locator('.note-form-actions .btn.primary', { hasText: '약품 등록' }).click()
 
-    await expect(page.locator('tbody tr')).toHaveCount(12)
+    await expect(page.locator('.med-list-card tbody tr')).toHaveCount(12)
     const total = page.locator('.kpi').filter({ has: page.locator('.lab', { hasText: '총 품목' }) }).locator('.val')
     await expect(total).toHaveText('12')
-    await expect(page.locator('tbody tr', { hasText: '미르타자핀 15mg' })).toBeVisible()
+    await expect(page.locator('.med-list-card tbody tr', { hasText: '미르타자핀 15mg' })).toBeVisible()
   })
 
   test('약품·재고 — 약품 삭제 후 목록에서 제거', async ({ page }) => {
     await page.goto('/')
     await page.locator('.nav-item', { hasText: '약품 · 재고' }).click()
-    await expect(page.locator('tbody tr')).toHaveCount(11)
+    await expect(page.locator('.med-list-card tbody tr')).toHaveCount(11)
 
-    const row = page.locator('tbody tr', { hasText: '졸피뎀 10mg' })
+    const row = page.locator('.med-list-card tbody tr', { hasText: '졸피뎀 10mg' })
     await row.locator('.row-act.danger', { hasText: '삭제' }).click()
-    await expect(page.locator('tbody tr', { hasText: '졸피뎀 10mg' })).toHaveCount(0)
-    await expect(page.locator('tbody tr')).toHaveCount(10)
+    await expect(page.locator('.med-list-card tbody tr', { hasText: '졸피뎀 10mg' })).toHaveCount(0)
+    await expect(page.locator('.med-list-card tbody tr')).toHaveCount(10)
+  })
+
+  test('입·출고 이력 — 처방 조제 시 조제 로그 자동 기록', async ({ page }) => {
+    await page.goto('/')
+    // 기본 선택 환자(정수민)에게 졸피뎀 10mg 10T 처방
+    await page.locator('.tab', { hasText: '처방·오더' }).click()
+    await page.locator('.note-add-btn', { hasText: '처방 추가' }).click()
+    await page.locator('.note-field', { hasText: '약물명' }).locator('input').fill('졸피뎀 10mg')
+    await page.locator('.note-field', { hasText: '용법' }).locator('input').fill('취침 전 1정')
+    await page.locator('.note-field', { hasText: '수량' }).locator('input').fill('10T')
+    await page.locator('.note-form button[type="submit"]').click()
+
+    // 약품·재고 이력 최상단에 조제 기록(약품·구분·환자)
+    await page.locator('.nav-item', { hasText: '약품 · 재고' }).click()
+    const top = page.locator('.med-log-card tbody tr').first()
+    await expect(top).toContainText('졸피뎀 10mg')
+    await expect(top).toContainText('조제')
+    await expect(top).toContainText('정수민')
   })
 
   test('예약 관리 — 상태 변경·추가·삭제', async ({ page }) => {

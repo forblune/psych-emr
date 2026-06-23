@@ -3,7 +3,7 @@
 begin;
 truncate clinics, doctors, patients, queue_entries, safety_assessments,
   rating_scales, trend_points, labs, prescriptions, clinical_notes,
-  patient_detail_meta, appointments, kpis, wards, admissions, billings, medications, diagnoses restart identity cascade;
+  patient_detail_meta, appointments, kpis, wards, admissions, billings, medications, diagnoses, med_stock_logs restart identity cascade;
 
 insert into clinics (hospital, department, room, session, display_date) values
   ('메디코어', '정신건강의학과', '제2진료실', '2026-06-22 오후 진료', '2026-06-22 (월)');
@@ -292,6 +292,15 @@ insert into medications (sort, code, name, drug_class, unit, stock, min_stock, e
   (8, 'B05500088', '클로나제팜 0.5mg', '벤조디아제핀', '정', 220, 80, '2027-06', true),
   (9, 'B06200140', '졸피뎀 10mg', '수면제', '정', 140, 80, '2027-03', true),
   (10, 'B07700233', '메틸페니데이트 18mg', '정신자극제', '정', 95, 60, '2026-08', true);
+
+-- ── 약품 입·출고 이력 ──
+insert into med_stock_logs (sort, medication_id, med_name, code, kind, qty, after_stock, reason, actor, created_at) values
+  (0, (select id from medications where code='A11800231'), '에스시탈로프람 10mg', 'A11800231', '입고', 200, 520, '정기 입고(월)', '약제팀', '2026-06-20 09:10:00'),
+  (1, (select id from medications where code='B05500071'), '로라제팜 1mg', 'B05500071', '불출', 40, 60, '폐쇄병동 정기 불출', '약제팀', '2026-06-22 14:30:00'),
+  (2, (select id from medications where code='B07700233'), '메틸페니데이트 18mg', 'B07700233', '조제', 30, 95, '처방 조제 · 오지안', '서연우', '2026-06-23 10:05:00'),
+  (3, (select id from medications where code='A31900207'), '쿠에티아핀 25mg', 'A31900207', '불출', 30, 90, '입원 처방 불출', '약제팀', '2026-06-23 11:20:00'),
+  (4, (select id from medications where code='A40110083'), '리튬카보네이트 300mg', 'A40110083', '입고', 50, 150, '긴급 입고', '약제팀', '2026-06-23 13:00:00'),
+  (5, (select id from medications where code='B06200140'), '졸피뎀 10mg', 'B06200140', '조제', 14, 140, '처방 조제 · 정수민', '서연우', '2026-06-23 13:45:00');
 
 -- ── 진단 마스터 (DSM-5 → ICD-10/KCD) ──
 insert into diagnoses (sort, code, dsm_name, ko_name, dx_group, note) values

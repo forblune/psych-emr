@@ -62,7 +62,7 @@ KPI 집계뷰 → 예약·청구 모듈 → **화면 7종(대시보드·예약·
 | `b6426d5` | 예약 관리 화면 (예약 상태 모델링) |
 | `bc65427` | 청구·수납 모듈 |
 
-> 마이그레이션 `0001~0019`, E2E **38/38**, **화면 7종**(대시보드·예약·병동·통계·검색·청구·약품), 임상 데이터 4종 + 입원 CRUD + 신규 접수 + 예약·청구 + 약품·재고(입고·불출·등록·삭제, 처방 시 재고 자동 차감) + 담당의별 RLS + Realtime(큐·노트·처방·입원).
+> 마이그레이션 `0001~0020`, E2E **39/39**, **화면 7종**(대시보드·예약·병동·통계·검색·청구·약품), 임상 데이터 4종 + 입원 CRUD + 신규 접수 + 예약·청구 + 약품·재고(입고·불출·등록·삭제, 처방 시 재고 자동 차감) + 담당의별 RLS + Realtime(큐·노트·처방·입원).
 
 ---
 
@@ -117,7 +117,7 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
 ## 전체 테스트 (2026-06-22)
 - **빌드**: `npm run build` 무에러 (89→ 모듈)
 - **DB/RLS**: 신규 클러스터에 0001→0002→seed 재적용 무에러 + RLS 매트릭스 재통과(담당의 7 / 타의사 0 / admin 7 / anon 0)
-- **E2E (Playwright/Chromium, mock 모드)**: `npm test` → **38/38 통과, 콘솔 에러 0**
+- **E2E (Playwright/Chromium, mock 모드)**: `npm test` → **39/39 통과, 콘솔 에러 0**
   - 렌더 / KPI / 통계 / 환자 검색 / 예약 관리 / 청구·수납(수납 처리) / 새로고침 / 신규 진료 / 입원·병동·등록·퇴원 / 환자 전환 / 탭4 / 테마 / 대기열 검색·정렬 / 노트·처방·척도·검사 CRUD
   - ⚠️ viewport는 1440×900 고정(`playwright.config.js`) — 720px면 밀집 레이아웃에서 탭과 겹쳐 클릭 인터셉트됨
 - **배포 사이트 렌더**: https://forblune.github.io/psych-emr/ 헤드리스 확인 — KPI6·행7·정수민·다크·에러0
@@ -166,6 +166,7 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
   - **진료→청구 자동 생성**: 신규 진료 시작 시(예약 경유든 대시보드든) 주상병=입력 dx, 외래 기본수가(초진 ₩18,000/재진 ₩12,000, 본인부담 30% 근사)로 **청구를 자동 insert**(상태 미수납). `api.addBilling`, mock은 로컬 반영·요약 재계산 / supabase는 refresh로 반영.
   - `0019`: billings **insert 정책 + `set_billing_attending` 트리거**(담당의 자동) + insert grant(0015는 select/update만 있었음). 입원(0011)과 동일 패턴.
   - ⚠ 예약 시작 시 즉시 '완료' 처리(데모 단순화); 청구 insert RLS는 로컬 미검증(트리거·정책 패턴은 0011과 동일).
+- **약품 입·출고 이력(감사 로그)** (`0020_med_stock_log.sql`, `App.logStock`, `Medications` 이력 패널) — 재고 변동마다 누가·언제·왜를 기록. 원인 3종: **입고**(수기 +)·**불출**(수기 −)·**조제**(처방 자동 차감). `med_stock_logs`(med_name/code 스냅샷 → 약품 삭제돼도 이력 보존, RLS 읽기/쓰기 인증 사용자). 약품 화면 하단에 **입·출고 이력** 카드(시각·약품·구분 배지·±수량·변경 후·사유·담당, 최신순). 수기 입고/불출은 `handleAdjustMed`, 처방 조제는 `dispenseForRx`(사유에 환자명)에서 `logStock` 호출. mock 6건 시드. ⚠ 화면에 표 2개라 E2E 셀렉터는 `.med-list-card`/`.med-log-card` 로 스코프.
 
 ## 아직 안 된 것
 - 미검증(서비스 레이어, SQL 아님): 호스팅 GoTrue 이메일 인증, PostgREST 임베딩 응답 shape, 실시간 수신 → 본인 Supabase에 올린 뒤 로그인 1회로 확인 권장
@@ -188,8 +189,8 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
 
 1. 환자 검색을 patients 테이블 직접 조회로(현재 오늘 큐+입원 범위).
 2. 예약 날짜 선택(현재 당일 고정). 예약↔진료↔청구 연동은 완료(0019).
-3. 입·출고 이력 로그(현재는 재고 수량만 갱신, 누가·언제·왜는 미기록).
-4. 진단 특정자/중증도 다중 코드 확장(현재 대표 코드 28종 큐레이션).
+3. 진단 특정자/중증도 다중 코드 확장(현재 대표 코드 28종 큐레이션).
+4. 약품 입·출고 이력 → 완료(0020). 후속: 약품별 이력 필터·기간 조회.
 
 ---
 
@@ -202,7 +203,7 @@ npm run dev            # http://localhost:5173  (env 없으면 mock)
 
 # Supabase 붙이려면 (README 참고):
 cp .env.example .env   # URL/anon key 채우기
-# SQL Editor: 0001 → … → 0019 → seed 순서로 실행
+# SQL Editor: 0001 → … → 0020 → seed 순서로 실행
 # 앱에서 가입 → 로그인
 
 # 데이터 수정 후 seed 재생성:
@@ -219,7 +220,7 @@ node scripts/gen-seed.mjs
 - 디자인 토큰/테마 → `src/theme.css`
 - 데이터 모양 바꾸기 → `src/data/mock.js` (+ `gen-seed.mjs` 재실행)
 - 백엔드 쿼리/매핑/쓰기(CRUD) → `src/data/api.js`
-- DB 스키마/정책 → `supabase/migrations/*.sql` (0001~0019)
+- DB 스키마/정책 → `supabase/migrations/*.sql` (0001~0020)
 - 인증 흐름 → `src/context/AuthContext.jsx`, `src/components/Login.jsx`
 - 화면 전환 → `App.jsx` `view` (dashboard/appts/ward/stats/search/billing/meds), 사이드바 `data/config.js`
 - 화면 컴포넌트 → `src/components/**` (탭: `tabs/**`; 화면: `Ward`/`Stats`/`PatientSearch`/`Appointments`/`Billing`/`Medications`/`NewVisit`)

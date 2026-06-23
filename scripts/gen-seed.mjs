@@ -3,7 +3,7 @@
 import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
-import { clinic, doctor, kpis, schedule, queue, wards, admissions, billings, medications, apptPresentation } from '../src/data/mock.js'
+import { clinic, doctor, kpis, schedule, queue, wards, admissions, billings, medications, medLogs, apptPresentation } from '../src/data/mock.js'
 import { diagnoses } from '../src/data/diagnoses.js'
 
 const __dir = dirname(fileURLToPath(import.meta.url))
@@ -24,7 +24,7 @@ w('-- 재생성:  node scripts/gen-seed.mjs')
 w('begin;')
 w('truncate clinics, doctors, patients, queue_entries, safety_assessments,')
 w('  rating_scales, trend_points, labs, prescriptions, clinical_notes,')
-w('  patient_detail_meta, appointments, kpis, wards, admissions, billings, medications, diagnoses restart identity cascade;')
+w('  patient_detail_meta, appointments, kpis, wards, admissions, billings, medications, diagnoses, med_stock_logs restart identity cascade;')
 w()
 
 // clinic + doctor
@@ -155,6 +155,19 @@ w(
     .map(
       (m, i) =>
         `  (${i}, ${q(m.code)}, ${q(m.name)}, ${q(m.drugClass)}, ${q(m.unit)}, ${n(m.stock)}, ${n(m.min)}, ${q(m.expiry)}, ${b(m.controlled)})`
+    )
+    .join(',\n') + ';'
+)
+w()
+
+// med_stock_logs (입·출고 이력 — medications 생성 후, code 로 연결)
+w(`-- ── 약품 입·출고 이력 ──`)
+w(`insert into med_stock_logs (sort, medication_id, med_name, code, kind, qty, after_stock, reason, actor, created_at) values`)
+w(
+  medLogs
+    .map(
+      (l, i) =>
+        `  (${i}, (select id from medications where code=${q(l.code)}), ${q(l.med)}, ${q(l.code)}, ${q(l.kind)}, ${n(l.qty)}, ${n(l.after)}, ${q(l.reason)}, ${q(l.actor)}, ${q('2026-' + l.at.replace(' ', 'T').replace(/(\d\d)-(\d\d)T/, '$1-$2 ') + ':00')})`
     )
     .join(',\n') + ';'
 )

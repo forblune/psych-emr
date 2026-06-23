@@ -330,6 +330,7 @@ td.ta-r{font-variant-numeric:tabular-nums;}
 .appt-status:focus{outline:none;border-color:var(--accent);}
 
 /* MEDICATIONS · 약품·재고 */
+.med-log-card{flex:none;max-height:230px;display:flex;flex-direction:column;min-height:0;}
 .badge-stack{display:inline-flex;flex-wrap:wrap;gap:3px;}
 .stock-adj{display:inline-flex;align-items:center;gap:4px;}
 .stock-qty{width:52px;text-align:right;padding:3px 6px;}

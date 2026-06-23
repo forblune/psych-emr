@@ -58,19 +58,28 @@ import {
   addMedication,
   updateMedStock,
   deleteMedication,
+  getMedLogs,
+  addMedLog,
   parseRxQty,
   matchMedicationIndex,
   getDiagnoses,
 } from './data/api'
 
+// 'MM-DD HH:MM' — mock 모드 로그 시각(브라우저 로컬).
+function nowShort() {
+  const d = new Date()
+  const p = (n) => String(n).padStart(2, '0')
+  return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
 async function loadAll() {
-  const [clinic, doctor, kpis, navGroups, queue, schedule, systemStatus, wards, admissions, wardSummary, billings, billingSummary, medications, medSummary, diagnoses] =
+  const [clinic, doctor, kpis, navGroups, queue, schedule, systemStatus, wards, admissions, wardSummary, billings, billingSummary, medications, medSummary, diagnoses, medLogs] =
     await Promise.all([
       getClinic(), getDoctor(), getKpis(), getNavGroups(), getQueue(),
       getSchedule(), getSystemStatus(), getWards(), getAdmissions(), getWardSummary(),
-      getBillings(), getBillingSummary(), getMedications(), getMedSummary(), getDiagnoses(),
+      getBillings(), getBillingSummary(), getMedications(), getMedSummary(), getDiagnoses(), getMedLogs(),
     ])
-  return { clinic, doctor, kpis, navGroups, queue, schedule, systemStatus, wards, admissions, wardSummary, billings, billingSummary, medications, medSummary, diagnoses }
+  return { clinic, doctor, kpis, navGroups, queue, schedule, systemStatus, wards, admissions, wardSummary, billings, billingSummary, medications, medSummary, diagnoses, medLogs }
 }
 
 export default function App() {
@@ -177,8 +186,8 @@ export default function App() {
           : p
       ),
     }))
-    // 처방 시 재고 자동 차감 (약물명이 약품 마스터와 정확히 일치 + 수량>0 일 때)
-    await dispenseForRx(rx)
+    // 처방 시 재고 자동 차감 + 조제 이력 (약물명이 약품 마스터와 정확히 일치 + 수량>0 일 때)
+    await dispenseForRx(rx, item.name)
   }
 
   // immutably patch one patient's detail in queue state
@@ -363,6 +372,13 @@ export default function App() {
     const created = await addMedication({ med, sort: data.medications.length })
     setMeds([...data.medications, created])
   }
+  // 재고 변동 1건을 입·출고 이력에 기록(누가·언제·왜).
+  async function logStock({ id, med, code, kind, qty, after, reason }) {
+    const created = await addMedLog({ log: { medicationId: id, med, code, kind, qty, after, reason, actor: data.doctor.name } })
+    const row = created.at ? created : { ...created, at: nowShort(), id: created.id ?? `local-${med}-${after}` }
+    setData((prev) => ({ ...prev, medLogs: [row, ...(prev.medLogs || [])] }))
+  }
+
   async function handleAdjustMed(index, delta) {
     const m = data.medications[index]
     if (!m) return
@@ -370,6 +386,7 @@ export default function App() {
     if (stock === m.stock) return
     await updateMedStock({ id: m.id, stock })
     setMeds(data.medications.map((it, i) => (i === index ? { ...it, stock } : it)))
+    await logStock({ id: m.id, med: m.name, code: m.code, kind: delta > 0 ? '입고' : '불출', qty: Math.abs(delta), after: stock, reason: '수기 조정' })
   }
   async function handleDeleteMed(index) {
     const m = data.medications[index]
@@ -378,8 +395,8 @@ export default function App() {
     setMeds(data.medications.filter((_, i) => i !== index))
   }
 
-  // 처방 1건을 약품 마스터와 매칭해 재고 차감. 일치 품목 없거나 수량 0이면 무동작.
-  async function dispenseForRx(rx) {
+  // 처방 1건을 약품 마스터와 매칭해 재고 차감 + 조제 이력 기록. 미일치/수량0이면 무동작.
+  async function dispenseForRx(rx, patientName = '') {
     const meds = data.medications
     const idx = matchMedicationIndex(meds, rx.name)
     if (idx < 0) return
@@ -390,6 +407,7 @@ export default function App() {
     if (stock === m.stock) return
     await updateMedStock({ id: m.id, stock })
     setMeds(meds.map((it, i) => (i === idx ? { ...it, stock } : it)))
+    await logStock({ id: m.id, med: m.name, code: m.code, kind: '조제', qty: need, after: stock, reason: patientName ? `처방 조제 · ${patientName}` : '처방 조제' })
   }
 
   async function refresh() {
@@ -472,6 +490,7 @@ export default function App() {
         <Medications
           medications={data.medications}
           summary={data.medSummary}
+          logs={data.medLogs}
           clinicDate={data.clinic.date}
           onAdd={handleAddMed}
           onAdjust={handleAdjustMed}

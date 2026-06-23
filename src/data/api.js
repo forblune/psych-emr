@@ -274,6 +274,38 @@ export async function deleteMedication({ id }) {
   if (error) throw error
 }
 
+// ── 약품 입·출고 이력 ───────────────────────────────────────────
+export async function getMedLogs() {
+  if (!isSupabaseConfigured) return mock.medLogs.map((l) => ({ ...l }))
+  const { data, error } = await supabase
+    .from('med_stock_logs')
+    .select('id, med_name, code, kind, qty, after_stock, reason, actor, created_at')
+    .order('sort', { ascending: false })
+  if (error) throw error
+  return data.map((l) => ({
+    id: l.id, med: l.med_name, code: l.code, kind: l.kind, qty: l.qty,
+    after: l.after_stock, reason: l.reason, actor: l.actor, at: l.created_at,
+  }))
+}
+
+// log: { medicationId?, med, code, kind, qty, after, reason, actor }
+export async function addMedLog({ log }) {
+  if (!isSupabaseConfigured) return { ...log }
+  const { data, error } = await supabase
+    .from('med_stock_logs')
+    .insert({
+      sort: Date.now(), medication_id: log.medicationId ?? null, med_name: log.med, code: log.code ?? '',
+      kind: log.kind, qty: log.qty, after_stock: log.after, reason: log.reason ?? '', actor: log.actor ?? '',
+    })
+    .select('id, med_name, code, kind, qty, after_stock, reason, actor, created_at')
+    .single()
+  if (error) throw error
+  return {
+    id: data.id, med: data.med_name, code: data.code, kind: data.kind, qty: data.qty,
+    after: data.after_stock, reason: data.reason, actor: data.actor, at: data.created_at,
+  }
+}
+
 // ── 처방 → 재고 연동 ────────────────────────────────────────────
 // 처방 수량 문자열에서 정수 추출. '30T' → 30, '180T' → 180, '—'/'' → 0.
 export function parseRxQty(qty) {

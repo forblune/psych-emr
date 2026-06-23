@@ -135,6 +135,17 @@ export const medications = [
   { code: 'B07700233', name: '메틸페니데이트 18mg', drugClass: '정신자극제', unit: '정', stock: 95, min: 60, expiry: '2026-08', controlled: true },
 ]
 
+// 약품 입·출고 이력 (감사 로그). kind: 입고(+) / 불출(−) / 조제(처방 자동 차감).
+// after = 변경 후 재고 스냅샷. 최신순은 화면에서 sort desc 로.
+export const medLogs = [
+  { code: 'A11800231', med: '에스시탈로프람 10mg', kind: '입고', qty: 200, after: 520, reason: '정기 입고(월)', actor: '약제팀', at: '06-20 09:10' },
+  { code: 'B05500071', med: '로라제팜 1mg', kind: '불출', qty: 40, after: 60, reason: '폐쇄병동 정기 불출', actor: '약제팀', at: '06-22 14:30' },
+  { code: 'B07700233', med: '메틸페니데이트 18mg', kind: '조제', qty: 30, after: 95, reason: '처방 조제 · 오지안', actor: '서연우', at: '06-23 10:05' },
+  { code: 'A31900207', med: '쿠에티아핀 25mg', kind: '불출', qty: 30, after: 90, reason: '입원 처방 불출', actor: '약제팀', at: '06-23 11:20' },
+  { code: 'A40110083', med: '리튬카보네이트 300mg', kind: '입고', qty: 50, after: 150, reason: '긴급 입고', actor: '약제팀', at: '06-23 13:00' },
+  { code: 'B06200140', med: '졸피뎀 10mg', kind: '조제', qty: 14, after: 140, reason: '처방 조제 · 정수민', actor: '서연우', at: '06-23 13:45' },
+]
+
 // ── detail builders ──────────────────────────────────────────
 const QTC = (v, f = 'f-n') => ({ name: 'QTc (ECG)', val: v, ref: '<450 ms', flag: 'QTc', flagType: f })
 
