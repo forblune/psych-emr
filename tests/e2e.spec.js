@@ -381,6 +381,33 @@ test.describe('정신과 EMR 대시보드 (mock 모드)', () => {
     await expect(page.locator('.dx-opt', { hasText: 'F33.3' })).toContainText('정신병적 증상이 있는 중증')
   })
 
+  test('진단 즐겨찾기·최근 사용 — 별표/선택 후 빈 검색 섹션에 표시', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('.crumb-actions .btn.primary', { hasText: '신규 진료 시작' }).click()
+    await expect(page.locator('.modal-card')).toBeVisible()
+
+    // 범불안장애(F41.1) 즐겨찾기 토글
+    await page.locator('.dx-search').fill('범불안')
+    await page.locator('.dx-li', { hasText: 'F41.1' }).locator('.dx-star').click()
+
+    // 검색어 비우면 '즐겨찾기' 섹션에 F41.1 표시
+    await page.locator('.dx-search').fill('')
+    const favSec = page.locator('.dx-sec', { hasText: '즐겨찾기' })
+    await expect(favSec).toBeVisible()
+    const list = page.locator('.dx-list')
+    await expect(list.locator('.dx-li', { hasText: 'F41.1' }).first()).toBeVisible()
+
+    // 공황장애(F41.0) 선택 → 최근 사용에 기록
+    await page.locator('.dx-search').fill('공황')
+    await page.locator('.dx-opt', { hasText: 'Panic disorder' }).click()
+    await expect(page.locator('.dx-selected')).toContainText('F41.0')
+
+    // 재오픈 → '최근 사용' 섹션에 F41.0
+    await page.locator('.dx-search').click()
+    await expect(page.locator('.dx-sec', { hasText: '최근 사용' })).toBeVisible()
+    await expect(page.locator('.dx-list .dx-li', { hasText: 'F41.0' }).first()).toBeVisible()
+  })
+
   test('환자 패널·대기열 — dx 코드에 한글 진단명 동반 표시', async ({ page }) => {
     await page.goto('/')
     // 기본 선택 환자(정수민, F33.1) 패널: 코드 + KCD 한글명
