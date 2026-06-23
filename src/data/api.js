@@ -106,7 +106,7 @@ export async function getSchedule() {
 const QUEUE_SELECT = `
   no, visit_type, status, status_cls, dx, received, wait, risk, position,
   patient:patients!inner (
-    chart_no, name, sex, age, rrn, initial, primary_tags,
+    id, chart_no, name, sex, age, rrn, initial, primary_tags,
     safety:safety_assessments ( level, sev, bold, body ),
     scales:rating_scales ( sort, name, tag, value, max, pct, severity, severity_label ),
     trend:trend_points ( sort, label, phq, gad ),
@@ -128,6 +128,7 @@ function mapQueueRow(row) {
   const p = row.patient
   return {
     no: row.no,
+    patientId: p.id,
     name: p.name,
     sex: p.sex,
     age: p.age,
@@ -197,6 +198,37 @@ function mapDetail(p) {
       segments: nt.segments,
     })),
   }
+}
+
+// ── writes ──────────────────────────────────────────────────────
+function nowStamp() {
+  const d = new Date()
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+// Create a clinical (SOAP) note. Returns the note in the UI's note shape.
+export async function addNote({ patientId, chart, author, dept, segments }) {
+  const datetime = nowStamp()
+  if (!isSupabaseConfigured) {
+    return { author, dept, datetime, segments } // mock: in-memory only
+  }
+
+  let pid = patientId
+  if (!pid) {
+    const { data: p, error } = await supabase.from('patients').select('id').eq('chart_no', chart).single()
+    if (error) throw error
+    pid = p.id
+  }
+
+  const { data, error } = await supabase
+    .from('clinical_notes')
+    // negative sort → newest first (mapDetail sorts by sort asc)
+    .insert({ patient_id: pid, sort: -Date.now(), author, dept, noted_at: datetime, segments })
+    .select('author, dept, noted_at, segments')
+    .single()
+  if (error) throw error
+  return { author: data.author, dept: data.dept, datetime: data.noted_at, segments: data.segments }
 }
 
 // flatten lab rows back into ordered [{ group, rows: [...] }]

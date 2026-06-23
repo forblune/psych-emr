@@ -74,17 +74,21 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
 ## 전체 테스트 (2026-06-22)
 - **빌드**: `npm run build` 무에러 (89→ 모듈)
 - **DB/RLS**: 신규 클러스터에 0001→0002→seed 재적용 무에러 + RLS 매트릭스 재통과(담당의 7 / 타의사 0 / admin 7 / anon 0)
-- **E2E (Playwright/Chromium, mock 모드)**: `npm test` → **5/5 통과, 콘솔 에러 0**
-  - 렌더(KPI6·대기열7·정수민·추이차트) / 환자 클릭 전환 / 탭4 / 테마 토글 / 정렬 세그먼트
+- **E2E (Playwright/Chromium, mock 모드)**: `npm test` → **8/8 통과, 콘솔 에러 0**
+  - 렌더 / 환자 클릭 전환 / 탭4 / 테마 토글 / 검색(이름·F코드·빈상태) / 정렬 / **노트 작성**
+  - ⚠️ viewport는 1440×900 고정(`playwright.config.js`) — 720px면 밀집 레이아웃에서 탭과 겹쳐 클릭 인터셉트됨
 - **배포 사이트 렌더**: https://forblune.github.io/psych-emr/ 헤드리스 확인 — KPI6·행7·정수민·다크·에러0
 - 테스트 코드: `tests/e2e.spec.js`, `playwright.config.js`
 
 ## 구현 완료 (실동작)
 - **검색** — TopBar 입력으로 대기열 필터(이름·차트번호·F코드·주민번호). Ctrl+K 포커스, Esc/× 초기화, 빈 상태 표시. 상태는 App→TopBar/PatientQueue로 흐름.
 - **정렬** — 대기순(대기시간 desc, 상담중 상단) / 접수순(접수시각 asc) / 위험도(고위험→중등도→일반). `PatientQueue.jsx` COMPARATORS.
+- **노트 작성(쓰기)** — 경과·면담 탭의 SOAP 폼 → `api.addNote()` → DB insert(또는 mock 메모리). 작성 즉시 목록 최상단. 작성자/진료과는 로그인 의사·진료과 자동 기입.
+  - RLS: `0003_note_write.sql` insert 정책 `with check (owns_patient(patient_id))` — **로컬 검증 완료**(담당의 작성 성공 / 타 의사 `RLS policy violation` 거부).
 
 ## 아직 안 된 것
 - 새로고침·"신규 진료 시작" 버튼 = **UI만, 동작 미구현**
+- 처방 쓰기(노트와 동일 패턴으로 확장 가능 — 0003 참고)
 - 쓰기 기능 없음(노트/처방 작성). 0002 하단에 RLS 쓰기 정책 *예시*만 주석.
 - Realtime 구독 없음(대기열 수동).
 - KPI는 큐레이션 값(집계 뷰 아님).

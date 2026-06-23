@@ -17,6 +17,7 @@ import {
   getQueue,
   getSchedule,
   getSystemStatus,
+  addNote,
 } from './data/api'
 
 export default function App() {
@@ -51,6 +52,26 @@ export default function App() {
       active = false
     }
   }, [authed])
+
+  async function handleAddNote(chart, segments) {
+    const item = data.queue.find((p) => p.chart === chart)
+    if (!item) return
+    const created = await addNote({
+      patientId: item.patientId,
+      chart,
+      author: data.doctor.name,
+      dept: data.clinic.department,
+      segments,
+    })
+    setData((prev) => ({
+      ...prev,
+      queue: prev.queue.map((p) =>
+        p.chart === chart
+          ? { ...p, detail: { ...p.detail, notes: [created, ...p.detail.notes] } }
+          : p
+      ),
+    }))
+  }
 
   if (loading) return null
   if (isSupabaseConfigured && !session) return <Login />
@@ -89,7 +110,7 @@ export default function App() {
             onSelect={setSelectedId}
             search={search}
           />
-          <PatientDetail patient={selected} />
+          <PatientDetail patient={selected} onAddNote={handleAddNote} />
           <Schedule schedule={data.schedule} />
         </div>
       </main>

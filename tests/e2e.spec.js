@@ -86,6 +86,26 @@ test.describe('정신과 EMR 대시보드 (mock 모드)', () => {
     await expect(page.locator('.queue-empty')).toBeVisible()
   })
 
+  test('노트 작성 — SOAP 입력 후 목록 맨 위에 추가', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('.tab', { hasText: '경과·면담' }).click()
+
+    const before = await page.locator('.note').count()
+
+    await page.locator('.note-add-btn').click()
+    await expect(page.locator('.note-form')).toBeVisible()
+    await page.locator('.note-field', { hasText: '주관적' }).locator('textarea').fill('E2E 테스트 경과 기록')
+    await page.locator('.note-field', { hasText: '평가' }).locator('textarea').fill('F33.1 유지')
+    await page.locator('.note-form button[type="submit"]').click()
+
+    // 폼 닫히고 노트 1개 증가
+    await expect(page.locator('.note')).toHaveCount(before + 1)
+    // 맨 위(최신) 노트에 작성자 + 입력 내용
+    const top = page.locator('.note').first()
+    await expect(top).toContainText('서연우 과장')
+    await expect(top).toContainText('E2E 테스트 경과 기록')
+  })
+
   test('정렬 — 위험도순은 고위험을 맨 위로', async ({ page }) => {
     await page.goto('/')
 

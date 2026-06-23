@@ -231,6 +231,17 @@ tbody td{padding:8px 12px;border-bottom:1px solid var(--line-2);vertical-align:m
 .warnbox b{color:var(--warn);}
 
 /* notes */
+.note-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.note-title{font-size:12px;font-weight:700;color:var(--ink);}
+.note-add-btn{padding:5px 11px;}
+.note-form{border:1px solid var(--line);border-radius:10px;padding:11px;margin-bottom:14px;background:var(--panel-2);}
+.note-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.note-field{display:flex;flex-direction:column;gap:4px;font-size:10.5px;font-weight:600;color:var(--ink-2);}
+.note-field textarea{font-family:inherit;font-size:12px;color:var(--ink);background:var(--panel);
+  border:1px solid var(--line);border-radius:7px;padding:7px 9px;resize:vertical;line-height:1.45;}
+.note-field textarea:focus{outline:none;border-color:var(--accent);}
+.note-err{color:var(--crit);font-size:11px;margin-top:8px;font-weight:600;}
+.note-form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;}
 .note{padding:10px 0;border-bottom:1px solid var(--line-2);}
 .note .nh{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);font-family:var(--mono);margin-bottom:4px;}
 .note .nh b{color:var(--accent);font-family:var(--sans);}
