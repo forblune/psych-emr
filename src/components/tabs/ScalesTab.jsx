@@ -3,9 +3,9 @@ import TrendChart from '../TrendChart'
 import Icon from '../Icon'
 import { SCALE_DEFS, SCALE_NAMES, classifyScale } from '../../lib/scales'
 
-export default function ScalesTab({ detail, onAddScale, onDeleteScale }) {
+export default function ScalesTab({ detail, onAddScale, onDeleteScale, onUpdateScale }) {
   const { safety, scales, trend, summary } = detail
-  const [open, setOpen] = useState(false)
+  const [mode, setMode] = useState(null) // null | 'add' | <index>
   const [name, setName] = useState(SCALE_NAMES[0])
   const [score, setScore] = useState('')
   const [err, setErr] = useState('')
@@ -15,15 +15,31 @@ export default function ScalesTab({ detail, onAddScale, onDeleteScale }) {
   const max = SCALE_DEFS[name].max
   const preview = score !== '' ? classifyScale(name, score) : null
 
+  const openAdd = () => {
+    setMode('add')
+    setName(SCALE_NAMES[0])
+    setScore('')
+    setErr('')
+  }
+  const openEdit = (i) => {
+    setMode(i)
+    setName(scales[i].name)
+    setScore(String(scales[i].value))
+    setErr('')
+    setOpErr('')
+  }
+  const close = () => setMode(null)
+
   async function submit(e) {
     e.preventDefault()
     if (score === '' || Number.isNaN(Number(score))) return setErr('점수를 입력하세요.')
     setBusy(true)
     setErr('')
     try {
-      await onAddScale(classifyScale(name, score))
-      setScore('')
-      setOpen(false)
+      const scale = classifyScale(name, score)
+      if (mode === 'add') await onAddScale(scale)
+      else await onUpdateScale(mode, scale)
+      close()
     } catch (e2) {
       setErr(e2.message || '저장에 실패했습니다.')
     } finally {
@@ -59,19 +75,19 @@ export default function ScalesTab({ detail, onAddScale, onDeleteScale }) {
 
       <div className="note-head">
         <span className="note-title">평가척도</span>
-        {!open && (
-          <button className="btn note-add-btn" onClick={() => setOpen(true)}>
+        {mode === null && (
+          <button className="btn note-add-btn" onClick={openAdd}>
             <Icon name="plus" size={13} />
             척도 입력
           </button>
         )}
       </div>
 
-      {open && (
+      {mode !== null && (
         <form className="note-form" onSubmit={submit}>
           <div className="scale-form-row">
             <label className="note-field">
-              <span>척도</span>
+              <span>척도{mode !== 'add' ? ' (수정)' : ''}</span>
               <select value={name} onChange={(e) => setName(e.target.value)}>
                 {SCALE_NAMES.map((n) => (
                   <option key={n} value={n}>
@@ -101,11 +117,11 @@ export default function ScalesTab({ detail, onAddScale, onDeleteScale }) {
           </div>
           {err && <div className="note-err">{err}</div>}
           <div className="note-form-actions">
-            <button type="button" className="btn" onClick={() => setOpen(false)} disabled={busy}>
+            <button type="button" className="btn" onClick={close} disabled={busy}>
               취소
             </button>
             <button type="submit" className="btn primary" disabled={busy}>
-              {busy ? '저장 중…' : '척도 저장'}
+              {busy ? '저장 중…' : mode === 'add' ? '척도 저장' : '수정 저장'}
             </button>
           </div>
         </form>
@@ -116,9 +132,16 @@ export default function ScalesTab({ detail, onAddScale, onDeleteScale }) {
       <div className="scales">
         {scales.map((s, i) => (
           <div className="scale" key={s.id ?? i}>
-            <button className="scale-del" onClick={() => remove(i)} aria-label="삭제" title="삭제">
-              ×
-            </button>
+            <span className="scale-actions">
+              {SCALE_DEFS[s.name] && (
+                <button className="scale-act" onClick={() => openEdit(i)} aria-label="수정" title="수정">
+                  수정
+                </button>
+              )}
+              <button className="scale-act del" onClick={() => remove(i)} aria-label="삭제" title="삭제">
+                ×
+              </button>
+            </span>
             <div className="st">
               <span className="sn">
                 {s.name} <small>{s.tag}</small>

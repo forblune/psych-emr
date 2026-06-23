@@ -25,8 +25,10 @@ import {
   deletePrescription,
   addScale,
   deleteScale,
+  updateScale,
   addLab,
   deleteLab,
+  updateLab,
 } from './data/api'
 
 export default function App() {
@@ -152,6 +154,16 @@ export default function App() {
     patchDetail(chart, (d) => ({ ...d, scales: d.scales.filter((_, i) => i !== index) }))
   }
 
+  async function handleUpdateScale(chart, index, scale) {
+    const s = data.queue.find((p) => p.chart === chart)?.detail.scales[index]
+    if (!s) return
+    await updateScale({ id: s.id, scale })
+    patchDetail(chart, (d) => ({
+      ...d,
+      scales: d.scales.map((it, i) => (i === index ? { ...scale, id: s.id } : it)),
+    }))
+  }
+
   async function handleAddLab(chart, lab) {
     const item = data.queue.find((p) => p.chart === chart)
     if (!item) return
@@ -175,6 +187,18 @@ export default function App() {
         .filter((g) => g.rows.length > 0)
       return { ...d, labs }
     })
+  }
+
+  async function handleUpdateLab(chart, groupIdx, rowIdx, lab) {
+    const row = data.queue.find((p) => p.chart === chart)?.detail.labs[groupIdx]?.rows[rowIdx]
+    if (!row) return
+    await updateLab({ id: row.id, lab })
+    patchDetail(chart, (d) => ({
+      ...d,
+      labs: d.labs.map((g, gi) =>
+        gi === groupIdx ? { ...g, rows: g.rows.map((r, ri) => (ri === rowIdx ? { ...r, ...lab } : r)) } : g
+      ),
+    }))
   }
 
   if (loading) return null
@@ -224,8 +248,10 @@ export default function App() {
             onDeleteRx={handleDeleteRx}
             onAddScale={handleAddScale}
             onDeleteScale={handleDeleteScale}
+            onUpdateScale={handleUpdateScale}
             onAddLab={handleAddLab}
             onDeleteLab={handleDeleteLab}
+            onUpdateLab={handleUpdateLab}
           />
           <Schedule schedule={data.schedule} />
         </div>

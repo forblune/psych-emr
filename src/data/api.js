@@ -361,6 +361,23 @@ export async function deleteScale({ id }) {
   if (error) throw error
 }
 
+export async function updateScale({ id, scale }) {
+  if (!isSupabaseConfigured || !id) return
+  const { error } = await supabase
+    .from('rating_scales')
+    .update({
+      name: scale.name,
+      tag: scale.tag,
+      value: scale.value,
+      max: scale.max,
+      pct: scale.pct,
+      severity: scale.cls,
+      severity_label: scale.label,
+    })
+    .eq('id', id)
+  if (error) throw error
+}
+
 export async function addLab({ patientId, chart, lab }) {
   if (!isSupabaseConfigured) return { ...lab }
   const pid = await resolvePid(patientId, chart)
@@ -395,6 +412,21 @@ export async function addLab({ patientId, chart, lab }) {
 export async function deleteLab({ id }) {
   if (!isSupabaseConfigured || !id) return
   const { error } = await supabase.from('labs').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function updateLab({ id, lab }) {
+  if (!isSupabaseConfigured || !id) return
+  const { error } = await supabase
+    .from('labs')
+    .update({
+      name: lab.name,
+      value: lab.val,
+      ref_range: lab.ref,
+      flag: lab.flag,
+      flag_type: lab.flagType,
+    })
+    .eq('id', id)
   if (error) throw error
 }
 

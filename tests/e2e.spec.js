@@ -180,8 +180,19 @@ test.describe('정신과 EMR 대시보드 (mock 모드)', () => {
     page.on('dialog', (d) => d.accept())
     await page.goto('/')
     const before = await page.locator('.scale').count()
-    await page.locator('.scale').first().locator('.scale-del').click()
+    await page.locator('.scale').first().locator('.scale-act.del').click()
     await expect(page.locator('.scale')).toHaveCount(before - 1)
+  })
+
+  test('척도 수정 — 점수 변경 시 중증도 갱신', async ({ page }) => {
+    await page.goto('/')
+    // PHQ-9 (정수민, 14=중등도) 수정 → 3점=정상
+    const phq = page.locator('.scale', { hasText: 'PHQ-9' })
+    await phq.locator('.scale-act', { hasText: '수정' }).click()
+    await expect(page.locator('.note-form')).toBeVisible()
+    await page.locator('.note-field input[type="number"]').fill('3')
+    await page.getByRole('button', { name: '수정 저장' }).click()
+    await expect(page.locator('.scale', { hasText: 'PHQ-9' })).toContainText('정상')
   })
 
   test('검사 입력 — 항목 추가 시 표에 반영', async ({ page }) => {
@@ -204,6 +215,17 @@ test.describe('정신과 EMR 대시보드 (mock 모드)', () => {
     const before = await page.locator('.lab-val').count()
     await page.locator('.lab-del').first().click()
     await expect(page.locator('.lab-val')).toHaveCount(before - 1)
+  })
+
+  test('검사 수정 — 결과·판정 변경 후 반영', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('.tab', { hasText: '검사·약물농도' }).click()
+    // 첫 검사 행 수정
+    await page.locator('tbody .row-act', { hasText: '수정' }).first().click()
+    await expect(page.locator('.note-form')).toBeVisible()
+    await page.locator('.note-field', { hasText: '결과' }).locator('input').fill('0.99')
+    await page.getByRole('button', { name: '수정 저장' }).click()
+    await expect(page.locator('.panes')).toContainText('0.99')
   })
 
   test('정렬 — 위험도순은 고위험을 맨 위로', async ({ page }) => {

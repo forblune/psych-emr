@@ -74,8 +74,8 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
 ## 전체 테스트 (2026-06-22)
 - **빌드**: `npm run build` 무에러 (89→ 모듈)
 - **DB/RLS**: 신규 클러스터에 0001→0002→seed 재적용 무에러 + RLS 매트릭스 재통과(담당의 7 / 타의사 0 / admin 7 / anon 0)
-- **E2E (Playwright/Chromium, mock 모드)**: `npm test` → **17/17 통과, 콘솔 에러 0**
-  - 렌더 / 환자 전환 / 탭4 / 테마 / 검색 / 정렬 / 노트 CRUD / 처방 CRUD / 척도 입력·삭제 / 검사 입력·삭제
+- **E2E (Playwright/Chromium, mock 모드)**: `npm test` → **19/19 통과, 콘솔 에러 0**
+  - 렌더 / 환자 전환 / 탭4 / 테마 / 검색 / 정렬 / 노트 CRUD / 처방 CRUD / 척도 CRUD / 검사 CRUD
   - ⚠️ viewport는 1440×900 고정(`playwright.config.js`) — 720px면 밀집 레이아웃에서 탭과 겹쳐 클릭 인터셉트됨
 - **배포 사이트 렌더**: https://forblune.github.io/psych-emr/ 헤드리스 확인 — KPI6·행7·정수민·다크·에러0
 - 테스트 코드: `tests/e2e.spec.js`, `playwright.config.js`
@@ -89,12 +89,13 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
   - RLS: `0004_rx_write.sql` insert 정책 동일 패턴 — **로컬 검증 완료**(담당의 4→5 성공 / 타 의사 거부 / 최종 5).
 - **노트/처방 수정·삭제** — 각 항목 인라인 수정 폼 + 삭제(확인 대화상자). 행 단위 작업이라 쿼리·매핑에 DB `id` 노출. `api.updateNote/deleteNote/updatePrescription/deletePrescription`.
   - RLS: `0005_note_rx_modify.sql` update/delete 정책 `using/with check (owns_patient)` — **로컬 검증 완료**(담당의 UPDATE/DELETE 1, 타 의사 0).
-- **척도·검사 입력·삭제** — 평가척도 탭은 점수 입력 시 **중증도 자동 분류**(`src/lib/scales.js` — PHQ-9/GAD-7/ISI/AUDIT 밴드), 검사 탭은 항목·수치·판정 입력. 카드/행 단위 삭제. `api.addScale/deleteScale/addLab/deleteLab`.
-  - RLS: `0006_scale_lab_write.sql` insert/delete 정책 — **로컬 검증 완료**(담당의 입력·삭제 성공 / 타 의사 거부·DELETE 0).
+- **척도·검사 CRUD** — 평가척도 탭은 점수 입력 시 **중증도 자동 분류**(`src/lib/scales.js` — PHQ-9/GAD-7/ISI/AUDIT 밴드), 검사 탭은 항목·수치·판정 입력. 카드/행 단위 수정·삭제. `api.add/delete/updateScale`, `api.add/delete/updateLab`.
+  - 수정 폼은 add/edit 공용(mode). 척도 수정은 SCALE_DEFS에 있는 척도만(미정의 척도는 삭제만). 검사 수정 시 분류(group)는 고정.
+  - RLS: `0006`(insert/delete) + `0007`(update) — **로컬 검증 완료**(담당의 성공 / 타 의사 거부·0행). 검증 중 셸 훅의 `claude` 오류가 출력에 끼어들어 한 번 오탐이 있었으나 debug.sql + raw 재실행으로 정상 확정.
 
 ## 아직 안 된 것
 - 새로고침·"신규 진료 시작" 버튼 = **UI만, 동작 미구현**
-- Realtime 대기열 자동 갱신, 척도·검사 수정(현재 입력·삭제만)
+- Realtime 대기열 자동 갱신
 - 쓰기 기능 없음(노트/처방 작성). 0002 하단에 RLS 쓰기 정책 *예시*만 주석.
 - Realtime 구독 없음(대기열 수동).
 - KPI는 큐레이션 값(집계 뷰 아님).

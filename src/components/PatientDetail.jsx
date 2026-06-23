@@ -21,8 +21,10 @@ export default function PatientDetail({
   onDeleteRx,
   onAddScale,
   onDeleteScale,
+  onUpdateScale,
   onAddLab,
   onDeleteLab,
+  onUpdateLab,
 }) {
   const [tab, setTab] = useState('sc')
   if (!patient) return null
@@ -78,8 +80,10 @@ export default function PatientDetail({
           onDeleteRx={(index) => onDeleteRx(c, index)}
           onAddScale={(scale) => onAddScale(c, scale)}
           onDeleteScale={(index) => onDeleteScale(c, index)}
+          onUpdateScale={(index, scale) => onUpdateScale(c, index, scale)}
           onAddLab={(lab) => onAddLab(c, lab)}
           onDeleteLab={(gi, ri) => onDeleteLab(c, gi, ri)}
+          onUpdateLab={(gi, ri, lab) => onUpdateLab(c, gi, ri, lab)}
           key={patient.chart + tab}
         />
       </div>
