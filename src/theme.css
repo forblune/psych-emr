@@ -316,6 +316,18 @@ tbody td{padding:8px 12px;border-bottom:1px solid var(--line-2);vertical-align:m
 .login-msg.ok{background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok);}
 .login-foot{font-size:10px;color:var(--ink-3);text-align:center;margin:2px 0 0;}
 
+/* refresh spin */
+.spin{display:inline-flex;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none;}}
+
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(8,14,20,.55);backdrop-filter:blur(2px);
+  display:grid;place-items:center;z-index:50;}
+.modal-card{width:420px;max-width:calc(100vw - 32px);background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;padding:18px;box-shadow:0 24px 60px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:12px;}
+.modal-title{margin:0;font-size:15px;font-weight:700;letter-spacing:-.02em;}
+
 /* WARD */
 .ward-content{flex:1;display:grid;grid-template-columns:300px 1fr;gap:12px;padding:12px 14px;min-height:0;overflow:hidden;}
 .ward-occ .ward-row{padding:9px 13px;border-bottom:1px solid var(--line-2);}

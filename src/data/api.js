@@ -111,6 +111,59 @@ export async function getKpis() {
   })
 }
 
+// ── 신규 환자 접수 (신규 진료 시작) ─────────────────────────────
+function nowHHMM() {
+  const d = new Date()
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+function blankDetail(type) {
+  return {
+    safety: { level: 'md', sev: 'C-SSRS\n미평가', text: '미평가 — 초기 자살위험 스크리닝 필요.', bold: '미평가' },
+    scales: [],
+    trend: { labels: [], phq: [], gad: [] },
+    summary: '신규 접수 — 평가 입력 전.',
+    labs: [],
+    rx: { items: [], warn: { title: '', text: '' } },
+    notes: [],
+  }
+}
+
+export async function startVisit({ name, sex, age, type, dx, queueLen = 0 }) {
+  const received = nowHHMM()
+  if (!isSupabaseConfigured) {
+    const chart = String(700001 + queueLen).padStart(8, '0')
+    const item = {
+      no: `A-${20 + queueLen}`, patientId: chart, name, sex, age, chart, rrn: '———',
+      type, statusCls: 'b-new', status: '신규', dx, received, wait: '0분', risk: '',
+      initial: name.charAt(0) || '환', tags: [type], detail: blankDetail(type),
+    }
+    return { chart, item }
+  }
+
+  // 1) 환자 (attending 은 트리거가 설정)
+  const chart = String(700001 + queueLen).padStart(8, '0')
+  const { data: p, error: pe } = await supabase
+    .from('patients')
+    .insert({ chart_no: chart, name, sex, age, rrn: '———', initial: name.charAt(0) || '환', primary_tags: [type] })
+    .select('id, chart_no')
+    .single()
+  if (pe) throw pe
+
+  // 2) 초기 안전성 평가
+  await supabase.from('safety_assessments').insert({
+    patient_id: p.id, level: 'md', sev: 'C-SSRS\n미평가', bold: '미평가',
+    body: '미평가 — 초기 자살위험 스크리닝 필요.',
+  })
+
+  // 3) 대기열 등록
+  const { error: qe } = await supabase.from('queue_entries').insert({
+    patient_id: p.id, position: 1000 + queueLen, no: `A-${20 + queueLen}`,
+    visit_type: type, status: '신규', status_cls: 'b-new', dx, received, wait: '0분', risk: '',
+  })
+  if (qe) throw qe
+  return { chart: p.chart_no }
+}
+
 // ── ward / admissions ───────────────────────────────────────────
 export async function getWards() {
   if (!isSupabaseConfigured) return mock.wards.map((w) => ({ ...w }))

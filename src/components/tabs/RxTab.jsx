@@ -162,14 +162,16 @@ export default function RxTab({ detail, onAddRx, onUpdateRx, onDeleteRx }) {
         )
       )}
 
-      <div className="warnbox">
-        <span style={{ color: 'var(--warn)' }}>
-          <Icon name="warning" />
-        </span>
-        <span>
-          <b>{warn.title}</b> — {warn.text}
-        </span>
-      </div>
+      {(warn.title || warn.text) && (
+        <div className="warnbox">
+          <span style={{ color: 'var(--warn)' }}>
+            <Icon name="warning" />
+          </span>
+          <span>
+            <b>{warn.title}</b> — {warn.text}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

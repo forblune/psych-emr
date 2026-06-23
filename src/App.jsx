@@ -7,6 +7,7 @@ import PatientQueue from './components/PatientQueue'
 import PatientDetail from './components/PatientDetail'
 import Schedule from './components/Schedule'
 import Ward from './components/Ward'
+import NewVisit from './components/NewVisit'
 import Login from './components/Login'
 import { useAuth } from './context/AuthContext'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
@@ -37,7 +38,17 @@ import {
   addLab,
   deleteLab,
   updateLab,
+  startVisit,
 } from './data/api'
+
+async function loadAll() {
+  const [clinic, doctor, kpis, navGroups, queue, schedule, systemStatus, wards, admissions, wardSummary] =
+    await Promise.all([
+      getClinic(), getDoctor(), getKpis(), getNavGroups(), getQueue(),
+      getSchedule(), getSystemStatus(), getWards(), getAdmissions(), getWardSummary(),
+    ])
+  return { clinic, doctor, kpis, navGroups, queue, schedule, systemStatus, wards, admissions, wardSummary }
+}
 
 export default function App() {
   const { session, loading } = useAuth()
@@ -46,6 +57,8 @@ export default function App() {
   const [search, setSearch] = useState('')
   const [realtimeOn, setRealtimeOn] = useState(false)
   const [view, setView] = useState('dashboard')
+  const [refreshing, setRefreshing] = useState(false)
+  const [showNewVisit, setShowNewVisit] = useState(false)
 
   // With Supabase, RLS needs an authenticated session before any read.
   const authed = !isSupabaseConfigured || Boolean(session)
@@ -56,24 +69,11 @@ export default function App() {
       return
     }
     let active = true
-    Promise.all([
-      getClinic(),
-      getDoctor(),
-      getKpis(),
-      getNavGroups(),
-      getQueue(),
-      getSchedule(),
-      getSystemStatus(),
-      getWards(),
-      getAdmissions(),
-      getWardSummary(),
-    ]).then(
-      ([clinic, doctor, kpis, navGroups, queue, schedule, systemStatus, wards, admissions, wardSummary]) => {
-        if (!active) return
-        setData({ clinic, doctor, kpis, navGroups, queue, schedule, systemStatus, wards, admissions, wardSummary })
-        setSelectedId(queue[0]?.chart ?? null)
-      }
-    )
+    loadAll().then((d) => {
+      if (!active) return
+      setData(d)
+      setSelectedId(d.queue[0]?.chart ?? null)
+    })
     return () => {
       active = false
     }
@@ -266,6 +266,31 @@ export default function App() {
     setAdmissions(data.admissions.filter((_, i) => i !== index))
   }
 
+  async function refresh() {
+    setRefreshing(true)
+    try {
+      const d = await loadAll()
+      setData(d)
+      setSelectedId((cur) => (d.queue.some((p) => p.chart === cur) ? cur : d.queue[0]?.chart ?? null))
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  async function handleStartVisit(form) {
+    const { chart, item } = await startVisit({ ...form, queueLen: data.queue.length })
+    if (item) {
+      // mock: append locally
+      setData((prev) => ({ ...prev, queue: [...prev.queue, item] }))
+    } else {
+      // supabase: reload to pick up the new entry (RLS)
+      await refresh()
+    }
+    setSelectedId(chart)
+    setShowNewVisit(false)
+    setView('dashboard')
+  }
+
   if (loading) return null
   if (isSupabaseConfigured && !session) return <Login />
   if (!data) return null
@@ -293,11 +318,13 @@ export default function App() {
             <b>{data.clinic.department}</b> / {data.clinic.room} / {data.clinic.session}
           </span>
           <div className="crumb-actions">
-            <button className="btn">
-              <Icon name="refresh" size={13} />
-              새로고침
+            <button className="btn" onClick={refresh} disabled={refreshing}>
+              <span className={refreshing ? 'spin' : undefined}>
+                <Icon name="refresh" size={13} />
+              </span>
+              {refreshing ? '갱신 중…' : '새로고침'}
             </button>
-            <button className="btn primary">
+            <button className="btn primary" onClick={() => setShowNewVisit(true)}>
               <Icon name="plus" size={13} />
               신규 진료 시작
             </button>
@@ -333,6 +360,7 @@ export default function App() {
         </div>
       </main>
       )}
+      {showNewVisit && <NewVisit onSubmit={handleStartVisit} onClose={() => setShowNewVisit(false)} />}
     </div>
   )
 }

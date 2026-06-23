@@ -96,6 +96,25 @@ test.describe('정신과 EMR 대시보드 (mock 모드)', () => {
     await expect(page.locator('.ward-list tbody tr')).toHaveCount(9)
   })
 
+  test('새로고침 — 데이터 재조회', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('.crumb-actions .btn', { hasText: '새로고침' }).click()
+    await expect(page.locator('.qrow')).toHaveCount(7)
+  })
+
+  test('신규 진료 시작 — 환자 접수 후 대기열·선택 반영', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.locator('.qrow')).toHaveCount(7)
+    await page.locator('.crumb-actions .btn.primary', { hasText: '신규 진료 시작' }).click()
+    await expect(page.locator('.modal-card')).toBeVisible()
+    await page.locator('.note-field', { hasText: '환자명' }).locator('input').fill('신규접수환자')
+    await page.locator('.note-field', { hasText: '진단 (F)' }).locator('input').fill('F41.0')
+    await page.locator('.modal-card button[type="submit"]').click()
+    await expect(page.locator('.modal-card')).toHaveCount(0)
+    await expect(page.locator('.qrow')).toHaveCount(8)
+    await expect(page.locator('.pt-id h2')).toHaveText('신규접수환자')
+  })
+
   test('대기열 행을 클릭하면 환자 패널이 바뀐다', async ({ page }) => {
     await page.goto('/')
     await page.locator('.qrow', { hasText: '강하늘' }).click()
