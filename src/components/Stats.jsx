@@ -53,6 +53,25 @@ function DxBars({ data, color = 'acc' }) {
   )
 }
 
+// 진단군(F-블록) 집계 — 코드 칩 없이 군 이름 + 막대.
+function GroupBars({ data, color = 'warn' }) {
+  const top = Math.max(1, ...data.map((d) => d.value))
+  return (
+    <div className="dxbars">
+      {data.length === 0 && <div className="queue-empty">데이터 없음</div>}
+      {data.map((d) => (
+        <div className="dxbar-row" key={d.label} title={`${d.label} · ${d.value}건`}>
+          <div className="dxbar-head">
+            <span className="dxbar-name">{d.label}</span>
+            <span className="num dxbar-n">{d.value}</span>
+          </div>
+          <span className="bar-track"><i className={`bar-fill bf-${color}`} style={{ width: `${(d.value / top) * 100}%` }} /></span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function Bars({ data, max, color = 'acc' }) {
   const top = max ?? Math.max(1, ...data.map((d) => d.value))
   return (
@@ -141,9 +160,12 @@ function RiskDonut({ segments }) {
 
 export default function Stats({ queue, admissions, wards, diagnoses = [] }) {
   const dxName = new Map(diagnoses.map((d) => [d.code, d.ko]))
+  const dxGroupOf = new Map(diagnoses.map((d) => [d.code, d.group]))
   const withName = (rows) => rows.map((d) => ({ ...d, name: dxName.get(d.label) || '' }))
   const dxOut = withName(countBy(queue, 'dx'))
   const dxAdm = withName(countBy(admissions, 'dx'))
+  // 진단군(F-블록)별 집계 — 외래+입원 합산
+  const dxGroup = countBy([...queue, ...admissions], (p) => dxGroupOf.get(p.dx) || '기타 · 미분류')
   const legal = countBy(admissions, 'legal')
   const scales = scaleAverages(queue)
   const risk = {
@@ -253,6 +275,11 @@ export default function Stats({ queue, admissions, wards, diagnoses = [] }) {
         <section className="card stat-card">
           <div className="hd"><h3>입원 진단 분포</h3><span className="meta">주상병 · KCD</span></div>
           <div className="stat-body"><DxBars data={dxAdm} color="ok" /></div>
+        </section>
+
+        <section className="card stat-card">
+          <div className="hd"><h3>진단군 분포</h3><span className="meta">F-블록 · 외래+입원</span></div>
+          <div className="stat-body"><GroupBars data={dxGroup} color="warn" /></div>
         </section>
       </div>
     </main>
