@@ -10,7 +10,7 @@ function StatusBadge({ status, now }) {
   return p.badgeLabel ? <span className={`badge ${p.badgeCls}`}>{p.badgeLabel}</span> : <span className="badge b-wait">예약</span>
 }
 
-export default function Appointments({ schedule, onAdd, onSetStatus, onDelete }) {
+export default function Appointments({ schedule, onAdd, onSetStatus, onDelete, onStartVisit }) {
   const slots = schedule.slots
   const [filter, setFilter] = useState('전체')
   const [adding, setAdding] = useState(false)
@@ -128,7 +128,12 @@ export default function Appointments({ schedule, onAdd, onSetStatus, onDelete })
                       </select>
                     </td>
                     <td>
-                      <button className="row-act danger" onClick={() => onDelete(idx)}>삭제</button>
+                      <span className="row-actions">
+                        {onStartVisit && (s.status === '예약' || s.status === '진행중') && (
+                          <button className="row-act" onClick={() => onStartVisit(idx)}>진료 시작</button>
+                        )}
+                        <button className="row-act danger" onClick={() => onDelete(idx)}>삭제</button>
+                      </span>
                     </td>
                   </tr>
                 ))}

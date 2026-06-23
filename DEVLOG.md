@@ -62,7 +62,7 @@ KPI 집계뷰 → 예약·청구 모듈 → **화면 7종(대시보드·예약·
 | `b6426d5` | 예약 관리 화면 (예약 상태 모델링) |
 | `bc65427` | 청구·수납 모듈 |
 
-> 마이그레이션 `0001~0018`, E2E **37/37**, **화면 7종**(대시보드·예약·병동·통계·검색·청구·약품), 임상 데이터 4종 + 입원 CRUD + 신규 접수 + 예약·청구 + 약품·재고(입고·불출·등록·삭제, 처방 시 재고 자동 차감) + 담당의별 RLS + Realtime(큐·노트·처방·입원).
+> 마이그레이션 `0001~0019`, E2E **38/38**, **화면 7종**(대시보드·예약·병동·통계·검색·청구·약품), 임상 데이터 4종 + 입원 CRUD + 신규 접수 + 예약·청구 + 약품·재고(입고·불출·등록·삭제, 처방 시 재고 자동 차감) + 담당의별 RLS + Realtime(큐·노트·처방·입원).
 
 ---
 
@@ -117,7 +117,7 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
 ## 전체 테스트 (2026-06-22)
 - **빌드**: `npm run build` 무에러 (89→ 모듈)
 - **DB/RLS**: 신규 클러스터에 0001→0002→seed 재적용 무에러 + RLS 매트릭스 재통과(담당의 7 / 타의사 0 / admin 7 / anon 0)
-- **E2E (Playwright/Chromium, mock 모드)**: `npm test` → **37/37 통과, 콘솔 에러 0**
+- **E2E (Playwright/Chromium, mock 모드)**: `npm test` → **38/38 통과, 콘솔 에러 0**
   - 렌더 / KPI / 통계 / 환자 검색 / 예약 관리 / 청구·수납(수납 처리) / 새로고침 / 신규 진료 / 입원·병동·등록·퇴원 / 환자 전환 / 탭4 / 테마 / 대기열 검색·정렬 / 노트·처방·척도·검사 CRUD
   - ⚠️ viewport는 1440×900 고정(`playwright.config.js`) — 720px면 밀집 레이아웃에서 탭과 겹쳐 클릭 인터셉트됨
 - **배포 사이트 렌더**: https://forblune.github.io/psych-emr/ 헤드리스 확인 — KPI6·행7·정수민·다크·에러0
@@ -161,6 +161,11 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
   - **청구에 주상병 추가** — `0018_billing_dx.sql`: billings 에 `dx`(주상병 ICD-10/KCD) 컬럼(기본 ''·하위호환). 실제 청구가 상병코드 기반인 점 반영. mock/seed 는 각 외래 환자의 실제 dx 로 채움. 청구 목록에 **주상병** 열(코드+한글명) 추가.
   - **통계 진단 분포 한글명화** (`Stats.jsx` `DxBars`) — 기존 외래/입원 진단 분포가 F코드 원본만 보이던 것을, 코드 칩 + **KCD 한글명**을 한 줄로 띄우고 막대는 아래에 두는 레이아웃으로 교체(긴 진단명 수용, title 툴팁). `diagnoses` 를 Stats 에 전달.
   - **진단군(F-블록) 집계 카드** (`Stats.jsx` `GroupBars`) — diagnoses 마스터의 `group`(F-블록)으로 외래+입원을 합산한 7번째 통계 카드. 코드 단위 분포보다 상위 묶음(기분장애/조현병 스펙트럼/불안·강박 등)으로 한눈에 파악. 미매칭 코드는 '기타·미분류'.
+- **예약 → 진료 → 청구 워크플로 연동** (`0019_billing_insert.sql`, `App.handleStartVisit`/`handleStartFromAppt`, `Appointments`·`NewVisit`) — 세 모듈을 한 흐름으로:
+  - **예약→진료**: 예약 행(상태 예약/진행중)에 **진료 시작** 버튼 → 환자명 프리필된 접수 모달(제목 "예약 연동") → 진단(DSM-5 선택) 입력 후 접수. 제출 시 해당 예약을 **완료**로 자동 처리.
+  - **진료→청구 자동 생성**: 신규 진료 시작 시(예약 경유든 대시보드든) 주상병=입력 dx, 외래 기본수가(초진 ₩18,000/재진 ₩12,000, 본인부담 30% 근사)로 **청구를 자동 insert**(상태 미수납). `api.addBilling`, mock은 로컬 반영·요약 재계산 / supabase는 refresh로 반영.
+  - `0019`: billings **insert 정책 + `set_billing_attending` 트리거**(담당의 자동) + insert grant(0015는 select/update만 있었음). 입원(0011)과 동일 패턴.
+  - ⚠ 예약 시작 시 즉시 '완료' 처리(데모 단순화); 청구 insert RLS는 로컬 미검증(트리거·정책 패턴은 0011과 동일).
 
 ## 아직 안 된 것
 - 미검증(서비스 레이어, SQL 아님): 호스팅 GoTrue 이메일 인증, PostgREST 임베딩 응답 shape, 실시간 수신 → 본인 Supabase에 올린 뒤 로그인 1회로 확인 권장
@@ -182,8 +187,9 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
 ## 다음 단계 (우선순위)
 
 1. 환자 검색을 patients 테이블 직접 조회로(현재 오늘 큐+입원 범위).
-2. 예약 날짜 선택(현재 당일), 예약↔진료 연동, 청구 자동 생성(진료 시).
+2. 예약 날짜 선택(현재 당일 고정). 예약↔진료↔청구 연동은 완료(0019).
 3. 입·출고 이력 로그(현재는 재고 수량만 갱신, 누가·언제·왜는 미기록).
+4. 진단 특정자/중증도 다중 코드 확장(현재 대표 코드 28종 큐레이션).
 
 ---
 
@@ -196,7 +202,7 @@ npm run dev            # http://localhost:5173  (env 없으면 mock)
 
 # Supabase 붙이려면 (README 참고):
 cp .env.example .env   # URL/anon key 채우기
-# SQL Editor: 0001 → … → 0018 → seed 순서로 실행
+# SQL Editor: 0001 → … → 0019 → seed 순서로 실행
 # 앱에서 가입 → 로그인
 
 # 데이터 수정 후 seed 재생성:
@@ -213,7 +219,7 @@ node scripts/gen-seed.mjs
 - 디자인 토큰/테마 → `src/theme.css`
 - 데이터 모양 바꾸기 → `src/data/mock.js` (+ `gen-seed.mjs` 재실행)
 - 백엔드 쿼리/매핑/쓰기(CRUD) → `src/data/api.js`
-- DB 스키마/정책 → `supabase/migrations/*.sql` (0001~0018)
+- DB 스키마/정책 → `supabase/migrations/*.sql` (0001~0019)
 - 인증 흐름 → `src/context/AuthContext.jsx`, `src/components/Login.jsx`
 - 화면 전환 → `App.jsx` `view` (dashboard/appts/ward/stats/search/billing/meds), 사이드바 `data/config.js`
 - 화면 컴포넌트 → `src/components/**` (탭: `tabs/**`; 화면: `Ward`/`Stats`/`PatientSearch`/`Appointments`/`Billing`/`Medications`/`NewVisit`)

@@ -51,6 +51,7 @@ import {
   getBillingSummary,
   markBillingPaid,
   summarizeBilling,
+  addBilling,
   getMedications,
   getMedSummary,
   summarizeMeds,
@@ -81,6 +82,8 @@ export default function App() {
   const [view, setView] = useState('dashboard')
   const [refreshing, setRefreshing] = useState(false)
   const [showNewVisit, setShowNewVisit] = useState(false)
+  // 예약에서 진료를 시작한 경우: { index, name } — 제출 시 해당 예약을 완료 처리.
+  const [pendingAppt, setPendingAppt] = useState(null)
 
   // With Supabase, RLS needs an authenticated session before any read.
   const authed = !isSupabaseConfigured || Boolean(session)
@@ -336,6 +339,13 @@ export default function App() {
     await deleteAppointment({ id: slot.id })
     setSlots(data.schedule.slots.filter((_, i) => i !== index))
   }
+  // 예약에서 진료 시작: 환자명 프리필로 접수 모달 열기(제출 시 예약 완료 처리).
+  function handleStartFromAppt(index) {
+    const slot = data.schedule.slots[index]
+    if (!slot) return
+    setPendingAppt({ index, name: slot.name })
+    setShowNewVisit(true)
+  }
 
   async function handleMarkPaid(index) {
     const bl = data.billings[index]
@@ -393,14 +403,33 @@ export default function App() {
     }
   }
 
+  // 진료 시작 → (1) 대기열 등록 (2) 주상병으로 청구 자동 생성 (3) 예약 연동 시 완료 처리.
+  // 외래 기본수가: 초진 ₩18,000 / 재진 ₩12,000, 본인부담 30%(건강보험 근사).
+  function buildVisitBilling(form, chart) {
+    const consult = form.type === '초진' ? 18000 : 12000
+    return {
+      chart, name: form.name, dx: form.dx, insurance: '건강보험',
+      consult, drug: 0, test: 0, copay: Math.round(consult * 0.3), status: '미수납',
+    }
+  }
+
   async function handleStartVisit(form) {
     const { chart, item } = await startVisit({ ...form, queueLen: data.queue.length })
+    const createdBilling = await addBilling({ billing: buildVisitBilling(form, chart), sort: data.billings.length })
     if (item) {
-      // mock: append locally
-      setData((prev) => ({ ...prev, queue: [...prev.queue, item] }))
+      // mock: 대기열 + 청구를 로컬에 반영
+      setData((prev) => {
+        const billings = [...prev.billings, createdBilling]
+        return { ...prev, queue: [...prev.queue, item], billings, billingSummary: summarizeBilling(billings) }
+      })
     } else {
-      // supabase: reload to pick up the new entry (RLS)
+      // supabase: 재조회로 큐·청구를 모두 반영(RLS)
       await refresh()
+    }
+    // 예약에서 시작했으면 해당 예약을 완료 처리
+    if (pendingAppt != null) {
+      await handleSetApptStatus(pendingAppt.index, '완료')
+      setPendingAppt(null)
     }
     setSelectedId(chart)
     setShowNewVisit(false)
@@ -435,6 +464,7 @@ export default function App() {
           onAdd={handleAddAppt}
           onSetStatus={handleSetApptStatus}
           onDelete={handleDeleteAppt}
+          onStartVisit={handleStartFromAppt}
         />
       ) : view === 'billing' ? (
         <Billing billings={data.billings} summary={data.billingSummary} diagnoses={data.diagnoses} onMarkPaid={handleMarkPaid} />
@@ -509,7 +539,14 @@ export default function App() {
         </div>
       </main>
       )}
-      {showNewVisit && <NewVisit onSubmit={handleStartVisit} onClose={() => setShowNewVisit(false)} diagnoses={data.diagnoses} />}
+      {showNewVisit && (
+        <NewVisit
+          onSubmit={handleStartVisit}
+          onClose={() => { setShowNewVisit(false); setPendingAppt(null) }}
+          diagnoses={data.diagnoses}
+          prefill={pendingAppt}
+        />
+      )}
     </div>
   )
 }

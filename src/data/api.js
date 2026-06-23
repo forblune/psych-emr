@@ -151,6 +151,32 @@ export function summarizeBilling(rows) {
   return billingSummary(rows)
 }
 
+// 진료 시작 시 청구 자동 생성. billing 은 UI 청구 shape(chart·name·dx·수가…).
+export async function addBilling({ billing, sort = 0 }) {
+  if (!isSupabaseConfigured) return { ...billing }
+  let pid = null
+  if (billing.chart) {
+    const { data: p } = await supabase.from('patients').select('id').eq('chart_no', billing.chart).maybeSingle()
+    pid = p?.id ?? null
+  }
+  const { data, error } = await supabase
+    .from('billings')
+    .insert({
+      sort, patient_id: pid, dx: billing.dx, insurance: billing.insurance,
+      consult_fee: billing.consult, drug_fee: billing.drug, test_fee: billing.test,
+      copay: billing.copay, status: billing.status,
+      // attending_id 는 트리거가 현재 의사로 설정
+    })
+    .select('id, dx, insurance, consult_fee, drug_fee, test_fee, copay, status, patient:patients(name, chart_no)')
+    .single()
+  if (error) throw error
+  return {
+    id: data.id, name: data.patient?.name ?? billing.name, chart: data.patient?.chart_no ?? billing.chart,
+    dx: data.dx, insurance: data.insurance, consult: data.consult_fee, drug: data.drug_fee,
+    test: data.test_fee, copay: data.copay, status: data.status,
+  }
+}
+
 export async function markBillingPaid({ id }) {
   if (!isSupabaseConfigured || !id) return
   const { error } = await supabase

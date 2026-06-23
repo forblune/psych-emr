@@ -217,6 +217,41 @@ test.describe('정신과 EMR 대시보드 (mock 모드)', () => {
     await expect(page.locator('tbody tr')).toHaveCount(9)
   })
 
+  test('예약→진료→청구 연동 — 예약에서 진료 시작 시 큐 등록·예약 완료·청구 자동 생성', async ({ page }) => {
+    await page.goto('/')
+
+    // 예약 화면: 배준서(상태 예약)에서 진료 시작
+    await page.locator('.nav-item', { hasText: '예약 관리' }).click()
+    const apptRow = page.locator('tbody tr', { hasText: '배준서' })
+    await apptRow.locator('.row-act', { hasText: '진료 시작' }).click()
+
+    // 접수 모달이 환자명 프리필 + 예약 연동 표시로 열림
+    await expect(page.locator('.modal-title')).toContainText('예약 연동')
+    await expect(page.locator('.note-field', { hasText: '환자명' }).locator('input')).toHaveValue('배준서')
+    // 진단 선택(불면 → KCD F51.0)
+    await page.locator('.dx-search').fill('불면')
+    await page.locator('.dx-opt', { hasText: 'Insomnia disorder' }).click()
+    await expect(page.locator('.dx-selected')).toContainText('F51.0')
+    await page.locator('.modal-card button[type="submit"]').click()
+
+    // 대시보드로 이동, 대기열 8명, 배준서 선택됨
+    await expect(page.locator('.modal-card')).toHaveCount(0)
+    await expect(page.locator('.qrow')).toHaveCount(8)
+    await expect(page.locator('.pt-id h2')).toHaveText('배준서')
+
+    // 예약은 완료 처리됨
+    await page.locator('.nav-item', { hasText: '예약 관리' }).click()
+    await expect(page.locator('tbody tr', { hasText: '배준서' }).locator('.badge')).toContainText('완료')
+
+    // 청구가 자동 생성됨(주상병 F51.0 비기질성 불면증, 미수납)
+    await page.locator('.nav-item', { hasText: '청구 · 수납' }).click()
+    const billRow = page.locator('tbody tr', { hasText: '배준서' })
+    await expect(billRow).toHaveCount(1)
+    await expect(billRow.locator('.dx')).toHaveText('F51.0')
+    await expect(billRow.locator('.dx-ko')).toHaveText('비기질성 불면증')
+    await expect(billRow.locator('.badge')).toContainText('미수납')
+  })
+
   test('환자 검색 — 통합 검색 후 열기로 이동', async ({ page }) => {
     await page.goto('/')
     await page.locator('.nav-item', { hasText: '환자 검색' }).click()

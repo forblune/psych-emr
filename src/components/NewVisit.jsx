@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import DiagnosisPicker from './DiagnosisPicker'
 
-export default function NewVisit({ onSubmit, onClose, diagnoses = [] }) {
-  const [vals, setVals] = useState({ name: '', sex: '남', age: '', type: '초진', dx: '' })
+export default function NewVisit({ onSubmit, onClose, diagnoses = [], prefill = null }) {
+  const [vals, setVals] = useState({
+    name: prefill?.name || '', sex: '남', age: '', type: '초진', dx: '',
+  })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const set = (k, v) => setVals((p) => ({ ...p, [k]: v }))
@@ -24,7 +26,7 @@ export default function NewVisit({ onSubmit, onClose, diagnoses = [] }) {
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
       <form className="modal-card" onMouseDown={(e) => e.stopPropagation()} onSubmit={submit}>
-        <h2 className="modal-title">신규 진료 시작 · 환자 접수</h2>
+        <h2 className="modal-title">신규 진료 시작 · 환자 접수{prefill?.name ? ' (예약 연동)' : ''}</h2>
         <div className="note-form-grid">
           <label className="note-field" style={{ gridColumn: '1 / -1' }}>
             <span>환자명 *</span>
