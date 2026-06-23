@@ -74,8 +74,8 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
 ## 전체 테스트 (2026-06-22)
 - **빌드**: `npm run build` 무에러 (89→ 모듈)
 - **DB/RLS**: 신규 클러스터에 0001→0002→seed 재적용 무에러 + RLS 매트릭스 재통과(담당의 7 / 타의사 0 / admin 7 / anon 0)
-- **E2E (Playwright/Chromium, mock 모드)**: `npm test` → **9/9 통과, 콘솔 에러 0**
-  - 렌더 / 환자 클릭 전환 / 탭4 / 테마 토글 / 검색(이름·F코드·빈상태) / 정렬 / **노트 작성** / **처방 추가**
+- **E2E (Playwright/Chromium, mock 모드)**: `npm test` → **13/13 통과, 콘솔 에러 0**
+  - 렌더 / 환자 전환 / 탭4 / 테마 / 검색 / 정렬 / 노트 작성·수정·삭제 / 처방 추가·수정·삭제
   - ⚠️ viewport는 1440×900 고정(`playwright.config.js`) — 720px면 밀집 레이아웃에서 탭과 겹쳐 클릭 인터셉트됨
 - **배포 사이트 렌더**: https://forblune.github.io/psych-emr/ 헤드리스 확인 — KPI6·행7·정수민·다크·에러0
 - 테스트 코드: `tests/e2e.spec.js`, `playwright.config.js`
@@ -87,10 +87,12 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
   - RLS: `0003_note_write.sql` insert 정책 `with check (owns_patient(patient_id))` — **로컬 검증 완료**(담당의 작성 성공 / 타 의사 `RLS policy violation` 거부).
 - **처방 추가(쓰기)** — 처방·오더 탭의 폼(약물명·분류·용법·수량·약가) → `api.addPrescription()` → DB insert(또는 mock). 추가분은 목록 하단에 `new`(앰버) 표시.
   - RLS: `0004_rx_write.sql` insert 정책 동일 패턴 — **로컬 검증 완료**(담당의 4→5 성공 / 타 의사 거부 / 최종 5).
+- **노트/처방 수정·삭제** — 각 항목 인라인 수정 폼 + 삭제(확인 대화상자). 행 단위 작업이라 쿼리·매핑에 DB `id` 노출. `api.updateNote/deleteNote/updatePrescription/deletePrescription`.
+  - RLS: `0005_note_rx_modify.sql` update/delete 정책 `using/with check (owns_patient)` — **로컬 검증 완료**(담당의 UPDATE/DELETE 1, 타 의사 0).
 
 ## 아직 안 된 것
 - 새로고침·"신규 진료 시작" 버튼 = **UI만, 동작 미구현**
-- 수정/삭제(노트·처방), 척도·검사 입력
+- 척도·검사 입력, Realtime 대기열 갱신
 - 쓰기 기능 없음(노트/처방 작성). 0002 하단에 RLS 쓰기 정책 *예시*만 주석.
 - Realtime 구독 없음(대기열 수동).
 - KPI는 큐레이션 값(집계 뷰 아님).

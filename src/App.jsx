@@ -19,6 +19,10 @@ import {
   getSystemStatus,
   addNote,
   addPrescription,
+  updateNote,
+  deleteNote,
+  updatePrescription,
+  deletePrescription,
 } from './data/api'
 
 export default function App() {
@@ -88,6 +92,48 @@ export default function App() {
     }))
   }
 
+  // immutably patch one patient's detail in queue state
+  function patchDetail(chart, fn) {
+    setData((prev) => ({
+      ...prev,
+      queue: prev.queue.map((p) => (p.chart === chart ? { ...p, detail: fn(p.detail) } : p)),
+    }))
+  }
+
+  async function handleUpdateNote(chart, index, segments) {
+    const note = data.queue.find((p) => p.chart === chart)?.detail.notes[index]
+    if (!note) return
+    await updateNote({ id: note.id, segments })
+    patchDetail(chart, (d) => ({
+      ...d,
+      notes: d.notes.map((n, i) => (i === index ? { ...n, segments } : n)),
+    }))
+  }
+
+  async function handleDeleteNote(chart, index) {
+    const note = data.queue.find((p) => p.chart === chart)?.detail.notes[index]
+    if (!note) return
+    await deleteNote({ id: note.id })
+    patchDetail(chart, (d) => ({ ...d, notes: d.notes.filter((_, i) => i !== index) }))
+  }
+
+  async function handleUpdateRx(chart, index, fields) {
+    const rx = data.queue.find((p) => p.chart === chart)?.detail.rx.items[index]
+    if (!rx) return
+    await updatePrescription({ id: rx.id, rx: fields })
+    patchDetail(chart, (d) => ({
+      ...d,
+      rx: { ...d.rx, items: d.rx.items.map((it, i) => (i === index ? { ...it, ...fields } : it)) },
+    }))
+  }
+
+  async function handleDeleteRx(chart, index) {
+    const rx = data.queue.find((p) => p.chart === chart)?.detail.rx.items[index]
+    if (!rx) return
+    await deletePrescription({ id: rx.id })
+    patchDetail(chart, (d) => ({ ...d, rx: { ...d.rx, items: d.rx.items.filter((_, i) => i !== index) } }))
+  }
+
   if (loading) return null
   if (isSupabaseConfigured && !session) return <Login />
   if (!data) return null
@@ -125,7 +171,15 @@ export default function App() {
             onSelect={setSelectedId}
             search={search}
           />
-          <PatientDetail patient={selected} onAddNote={handleAddNote} onAddRx={handleAddRx} />
+          <PatientDetail
+            patient={selected}
+            onAddNote={handleAddNote}
+            onAddRx={handleAddRx}
+            onUpdateNote={handleUpdateNote}
+            onDeleteNote={handleDeleteNote}
+            onUpdateRx={handleUpdateRx}
+            onDeleteRx={handleDeleteRx}
+          />
           <Schedule schedule={data.schedule} />
         </div>
       </main>

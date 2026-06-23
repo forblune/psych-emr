@@ -11,10 +11,19 @@ const TABS = [
   { key: 'note', label: '경과·면담', Comp: NotesTab },
 ]
 
-export default function PatientDetail({ patient, onAddNote, onAddRx }) {
+export default function PatientDetail({
+  patient,
+  onAddNote,
+  onAddRx,
+  onUpdateNote,
+  onDeleteNote,
+  onUpdateRx,
+  onDeleteRx,
+}) {
   const [tab, setTab] = useState('sc')
   if (!patient) return null
   const Active = TABS.find((t) => t.key === tab).Comp
+  const c = patient.chart
 
   return (
     <section className="card" style={{ gridRow: 1 }}>
@@ -57,8 +66,12 @@ export default function PatientDetail({ patient, onAddNote, onAddRx }) {
       <div className="panes">
         <Active
           detail={patient.detail}
-          onAddNote={(segments) => onAddNote(patient.chart, segments)}
-          onAddRx={(rx) => onAddRx(patient.chart, rx)}
+          onAddNote={(segments) => onAddNote(c, segments)}
+          onAddRx={(rx) => onAddRx(c, rx)}
+          onUpdateNote={(index, segments) => onUpdateNote(c, index, segments)}
+          onDeleteNote={(index) => onDeleteNote(c, index)}
+          onUpdateRx={(index, fields) => onUpdateRx(c, index, fields)}
+          onDeleteRx={(index) => onDeleteRx(c, index)}
           key={patient.chart + tab}
         />
       </div>

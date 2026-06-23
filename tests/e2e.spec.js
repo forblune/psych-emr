@@ -123,6 +123,45 @@ test.describe('정신과 EMR 대시보드 (mock 모드)', () => {
     await expect(page.locator('.rx').last()).toHaveClass(/new/)
   })
 
+  test('노트 수정 — 내용 변경 후 반영', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('.tab', { hasText: '경과·면담' }).click()
+    const first = page.locator('.note').first()
+    await first.locator('.row-act', { hasText: '수정' }).click()
+    const form = page.locator('.note-form')
+    await form.locator('textarea').first().fill('수정된 경과 내용 E2E')
+    await form.getByRole('button', { name: '수정 저장' }).click()
+    await expect(page.locator('.note').first()).toContainText('수정된 경과 내용 E2E')
+  })
+
+  test('노트 삭제 — 확인 후 목록에서 제거', async ({ page }) => {
+    page.on('dialog', (d) => d.accept())
+    await page.goto('/')
+    await page.locator('.tab', { hasText: '경과·면담' }).click()
+    const before = await page.locator('.note').count()
+    await page.locator('.note').first().locator('.row-act', { hasText: '삭제' }).click()
+    await expect(page.locator('.note')).toHaveCount(before - 1)
+  })
+
+  test('처방 수정 — 약물명 변경 후 반영', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('.tab', { hasText: '처방·오더' }).click()
+    await page.locator('.rx').first().locator('.row-act', { hasText: '수정' }).click()
+    const form = page.locator('.note-form')
+    await form.locator('.note-field', { hasText: '약물명' }).locator('input').fill('수정된약물 5mg')
+    await form.getByRole('button', { name: '수정 저장' }).click()
+    await expect(page.locator('.rx').first()).toContainText('수정된약물 5mg')
+  })
+
+  test('처방 삭제 — 확인 후 목록에서 제거', async ({ page }) => {
+    page.on('dialog', (d) => d.accept())
+    await page.goto('/')
+    await page.locator('.tab', { hasText: '처방·오더' }).click()
+    const before = await page.locator('.rx').count()
+    await page.locator('.rx').first().locator('.row-act', { hasText: '삭제' }).click()
+    await expect(page.locator('.rx')).toHaveCount(before - 1)
+  })
+
   test('정렬 — 위험도순은 고위험을 맨 위로', async ({ page }) => {
     await page.goto('/')
 

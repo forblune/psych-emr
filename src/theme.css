@@ -241,6 +241,14 @@ tbody td{padding:8px 12px;border-bottom:1px solid var(--line-2);vertical-align:m
   border:1px solid var(--line);border-radius:7px;padding:7px 9px;resize:vertical;line-height:1.45;width:100%;}
 .note-field textarea:focus,.note-field input:focus{outline:none;border-color:var(--accent);}
 .note-err{color:var(--crit);font-size:11px;margin-top:8px;font-weight:600;}
+.note-edit-grid{display:grid;grid-template-columns:1fr;gap:9px;}
+.nh-right{display:flex;align-items:center;gap:8px;}
+.row-actions{display:inline-flex;gap:4px;}
+.row-act{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:5px;
+  font-size:10px;font-weight:600;padding:1px 7px;}
+.row-act:hover{border-color:var(--ink-3);color:var(--ink);}
+.row-act.danger:hover{border-color:var(--crit);color:var(--crit);}
+.rx .info .row-actions{margin-top:6px;}
 .note-form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;}
 .note{padding:10px 0;border-bottom:1px solid var(--line-2);}
 .note .nh{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);font-family:var(--mono);margin-bottom:4px;}

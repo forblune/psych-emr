@@ -111,8 +111,8 @@ const QUEUE_SELECT = `
     scales:rating_scales ( sort, name, tag, value, max, pct, severity, severity_label ),
     trend:trend_points ( sort, label, phq, gad ),
     labs ( sort, lab_group, name, value, ref_range, flag, flag_type, collected ),
-    rx:prescriptions ( sort, drug_class, class_warn, name, brand, dose, sub, sub_bold, qty, price, is_new ),
-    notes:clinical_notes ( sort, author, dept, noted_at, segments ),
+    rx:prescriptions ( id, sort, drug_class, class_warn, name, brand, dose, sub, sub_bold, qty, price, is_new ),
+    notes:clinical_notes ( id, sort, author, dept, noted_at, segments ),
     meta:patient_detail_meta ( summary, rx_warn_title, rx_warn_body )
   )
 `
@@ -178,6 +178,7 @@ function mapDetail(p) {
     labs: groupLabs(labRows),
     rx: {
       items: rxRows.map((r) => ({
+        id: r.id,
         klass: r.drug_class,
         klassWarn: r.class_warn,
         name: r.name,
@@ -192,6 +193,7 @@ function mapDetail(p) {
       warn: { title: meta.rx_warn_title ?? '', text: meta.rx_warn_body ?? '' },
     },
     notes: notes.map((nt) => ({
+      id: nt.id,
       author: nt.author,
       dept: nt.dept,
       datetime: nt.noted_at,
@@ -275,6 +277,42 @@ export async function addPrescription({ patientId, chart, rx }) {
     price: data.price,
     isNew: data.is_new,
   }
+}
+
+// ── updates / deletes (id from DB; no-op in mock) ───────────────
+export async function updateNote({ id, segments }) {
+  if (!isSupabaseConfigured || !id) return
+  const { error } = await supabase.from('clinical_notes').update({ segments }).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteNote({ id }) {
+  if (!isSupabaseConfigured || !id) return
+  const { error } = await supabase.from('clinical_notes').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function updatePrescription({ id, rx }) {
+  if (!isSupabaseConfigured || !id) return
+  const { error } = await supabase
+    .from('prescriptions')
+    .update({
+      drug_class: rx.klass,
+      name: rx.name,
+      brand: rx.brand ?? '',
+      dose: rx.dose,
+      sub: rx.sub ?? '',
+      qty: rx.qty ?? '',
+      price: rx.price ?? '',
+    })
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deletePrescription({ id }) {
+  if (!isSupabaseConfigured || !id) return
+  const { error } = await supabase.from('prescriptions').delete().eq('id', id)
+  if (error) throw error
 }
 
 // flatten lab rows back into ordered [{ group, rows: [...] }]
