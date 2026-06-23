@@ -9,6 +9,7 @@ import Schedule from './components/Schedule'
 import Ward from './components/Ward'
 import Stats from './components/Stats'
 import PatientSearch from './components/PatientSearch'
+import Appointments from './components/Appointments'
 import NewVisit from './components/NewVisit'
 import Login from './components/Login'
 import { useAuth } from './context/AuthContext'
@@ -24,6 +25,9 @@ import {
   getWards,
   getAdmissions,
   getWardSummary,
+  addAppointment,
+  updateAppointmentStatus,
+  deleteAppointment,
   addAdmission,
   updateAdmission,
   deleteAdmission,
@@ -285,6 +289,36 @@ export default function App() {
     setAdmissions(data.admissions.filter((_, i) => i !== index))
   }
 
+  // ── 예약 관리 ──
+  function setSlots(next) {
+    const done = next.filter((s) => s.status === '완료').length
+    setData((prev) => ({
+      ...prev,
+      schedule: { ...prev.schedule, slots: next },
+      kpis: prev.kpis.map((k) =>
+        k.label === '금일 예약'
+          ? { ...k, value: String(next.length), sub: `완료 ${done} · 잔여 ${next.length - done}` }
+          : k
+      ),
+    }))
+  }
+  async function handleAddAppt(a) {
+    const created = await addAppointment({ a, sort: data.schedule.slots.length })
+    setSlots([...data.schedule.slots, created])
+  }
+  async function handleSetApptStatus(index, status) {
+    const slot = data.schedule.slots[index]
+    if (!slot) return
+    await updateAppointmentStatus({ id: slot.id, status })
+    setSlots(data.schedule.slots.map((s, i) => (i === index ? { ...s, status } : s)))
+  }
+  async function handleDeleteAppt(index) {
+    const slot = data.schedule.slots[index]
+    if (!slot) return
+    await deleteAppointment({ id: slot.id })
+    setSlots(data.schedule.slots.filter((_, i) => i !== index))
+  }
+
   async function refresh() {
     setRefreshing(true)
     try {
@@ -331,6 +365,13 @@ export default function App() {
         />
       ) : view === 'stats' ? (
         <Stats queue={data.queue} admissions={data.admissions} wards={data.wards} />
+      ) : view === 'appts' ? (
+        <Appointments
+          schedule={data.schedule}
+          onAdd={handleAddAppt}
+          onSetStatus={handleSetApptStatus}
+          onDelete={handleDeleteAppt}
+        />
       ) : view === 'search' ? (
         <PatientSearch
           queue={data.queue}

@@ -316,6 +316,11 @@ tbody td{padding:8px 12px;border-bottom:1px solid var(--line-2);vertical-align:m
 .login-msg.ok{background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok);}
 .login-foot{font-size:10px;color:var(--ink-3);text-align:center;margin:2px 0 0;}
 
+/* APPOINTMENTS */
+.appt-status{font-family:inherit;font-size:11px;color:var(--ink);background:var(--panel);
+  border:1px solid var(--line);border-radius:6px;padding:3px 6px;}
+.appt-status:focus{outline:none;border-color:var(--accent);}
+
 /* PATIENT SEARCH */
 .search-screen{flex:1;display:flex;flex-direction:column;gap:12px;padding:12px 14px;min-height:0;overflow:hidden;}
 .search-bar{display:flex;gap:10px;align-items:center;}

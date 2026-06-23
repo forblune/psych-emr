@@ -63,19 +63,31 @@ export const navGroups = [
   },
 ]
 
+// status: 예약 / 진행중 / 완료 / 취소 / 노쇼 (단일 소스 — 표현은 파생)
 export const schedule = {
   range: '오후 · 13:00–18:00',
   slots: [
-    { time: '13:00', name: '윤도현', desc: '재진 · 공황장애', bar: 'sl-mut', badge: { cls: 'b-done', label: '완료' } },
-    { time: '13:20', name: '오지안', desc: '재진 · ADHD', bar: 'sl-mut', badge: { cls: 'b-done', label: '완료' } },
-    { time: '13:40', name: '정수민', desc: '재진 · 우울장애', bar: 'sl-acc', badge: { cls: 'b-prog', label: '상담중' }, now: true },
-    { time: '14:00', name: '강하늘', desc: '응급 · 자살위기 평가', bar: 'sl-warn', tail: '대기' },
-    { time: '14:50', name: '임서윤', desc: '초진면담 50분 · 불안', bar: 'sl-mut', tail: '예약' },
-    { time: '15:40', name: '배준서', desc: '심리상담 50분', bar: 'sl-mut', tail: '예약' },
-    { time: '16:30', name: '한예린', desc: '재진 · 양극성장애', bar: 'sl-mut', tail: '예약' },
-    { time: '16:50', name: '조민재', desc: '재진 · 조현병', bar: 'sl-mut', tail: '예약' },
-    { time: '17:10', name: '신아윤', desc: '재진 · 불면', bar: 'sl-mut', tail: '예약' },
+    { time: '13:00', name: '윤도현', desc: '재진 · 공황장애', status: '완료' },
+    { time: '13:20', name: '오지안', desc: '재진 · ADHD', status: '완료' },
+    { time: '13:40', name: '정수민', desc: '재진 · 우울장애', status: '진행중', now: true },
+    { time: '14:00', name: '강하늘', desc: '응급 · 자살위기 평가', status: '예약' },
+    { time: '14:50', name: '임서윤', desc: '초진면담 50분 · 불안', status: '예약' },
+    { time: '15:40', name: '배준서', desc: '심리상담 50분', status: '예약' },
+    { time: '16:30', name: '한예린', desc: '재진 · 양극성장애', status: '예약' },
+    { time: '16:50', name: '조민재', desc: '재진 · 조현병', status: '예약' },
+    { time: '17:10', name: '신아윤', desc: '재진 · 불면', status: '예약' },
   ],
+}
+
+// 예약 상태 → 표현(배지/바) 파생. Schedule·Appointments·seed 공용 규칙.
+export function apptPresentation(status, now) {
+  switch (status) {
+    case '완료': return { bar: 'sl-mut', badgeCls: 'b-done', badgeLabel: '완료' }
+    case '진행중': return { bar: now ? 'sl-acc' : 'sl-acc', badgeCls: 'b-prog', badgeLabel: '진행중' }
+    case '취소': return { bar: 'sl-mut', badgeCls: 'b-wait', badgeLabel: '취소' }
+    case '노쇼': return { bar: 'sl-warn', badgeCls: 'b-emg', badgeLabel: '노쇼' }
+    default: return { bar: 'sl-mut', badgeCls: null, badgeLabel: null, tail: '예약' }
+  }
 }
 
 export const wards = [

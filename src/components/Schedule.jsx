@@ -1,3 +1,5 @@
+import { apptPresentation } from '../data/mock'
+
 export default function Schedule({ schedule }) {
   return (
     <section className="card" style={{ gridRow: 2, gridColumn: 2 }}>
@@ -9,19 +11,22 @@ export default function Schedule({ schedule }) {
         </div>
       </div>
       <div className="scroll">
-        {schedule.slots.map((s, i) => (
-          <div className={`slot${s.now ? ' now' : ''}`} key={i}>
-            <span className="tm">{s.time}</span>
-            <div className={`bar ${s.bar}`}>
-              <b>{s.name}</b> {s.desc}
-              {s.badge ? (
-                <span className={`t badge ${s.badge.cls}`}>{s.badge.label}</span>
-              ) : (
-                <span className="t">{s.tail}</span>
-              )}
+        {schedule.slots.map((s, i) => {
+          const p = apptPresentation(s.status, s.now)
+          return (
+            <div className={`slot${s.now ? ' now' : ''}`} key={s.id ?? i}>
+              <span className="tm">{s.time}</span>
+              <div className={`bar ${p.bar}`}>
+                <b>{s.name}</b> {s.desc}
+                {p.badgeLabel ? (
+                  <span className={`t badge ${p.badgeCls}`}>{p.badgeLabel}</span>
+                ) : (
+                  <span className="t">{p.tail}</span>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </section>
   )

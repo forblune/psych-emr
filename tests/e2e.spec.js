@@ -96,6 +96,30 @@ test.describe('정신과 EMR 대시보드 (mock 모드)', () => {
     await expect(page.locator('.ward-list tbody tr')).toHaveCount(9)
   })
 
+  test('예약 관리 — 상태 변경·추가·삭제', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('.nav-item', { hasText: '예약 관리' }).click()
+    await expect(page.locator('.crumb h1')).toHaveText('예약 관리')
+    await expect(page.locator('tbody tr')).toHaveCount(9)
+
+    // 강하늘 예약 → 취소로 상태 변경, 배지 반영
+    const row = page.locator('tbody tr', { hasText: '강하늘' })
+    await row.locator('.appt-status').selectOption('취소')
+    await expect(row.locator('.badge')).toContainText('취소')
+
+    // 예약 추가
+    await page.locator('.crumb-actions .btn.primary', { hasText: '예약 추가' }).click()
+    await expect(page.locator('.note-form')).toBeVisible()
+    await page.locator('.note-field', { hasText: '시간' }).locator('input').fill('17:30')
+    await page.locator('.note-field', { hasText: '환자명' }).locator('input').fill('신규예약환자')
+    await page.locator('.note-form button[type="submit"]').click()
+    await expect(page.locator('tbody tr')).toHaveCount(10)
+
+    // 삭제
+    await page.locator('tbody tr', { hasText: '신규예약환자' }).locator('.row-act.danger').click()
+    await expect(page.locator('tbody tr')).toHaveCount(9)
+  })
+
   test('환자 검색 — 통합 검색 후 열기로 이동', async ({ page }) => {
     await page.goto('/')
     await page.locator('.nav-item', { hasText: '환자 검색' }).click()

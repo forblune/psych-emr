@@ -83,7 +83,7 @@ function computeKpiRaw(queue, schedule, admissions) {
   const inSet = (s) => ['대기', '신규', '위기'].includes(s)
   return {
     apptTotal: slots.length,
-    apptDone: slots.filter((s) => s.badge?.cls === 'b-done').length,
+    apptDone: slots.filter((s) => s.status === '완료').length,
     waiting: queue.filter((p) => inSet(p.status)).length,
     inConsult: queue.filter((p) => p.status === '상담중').length,
     visitsToday: queue.length,
@@ -261,24 +261,43 @@ export async function getWardSummary() {
 }
 
 export async function getSchedule() {
-  if (!isSupabaseConfigured) return mock.schedule
+  if (!isSupabaseConfigured) {
+    return { range: mock.schedule.range, slots: mock.schedule.slots.map((s) => ({ ...s })) }
+  }
   const { data, error } = await supabase
     .from('appointments')
-    .select('sort, start_time, patient_name, description, bar, badge_cls, badge_label, tail, is_now')
+    .select('id, sort, start_time, patient_name, description, status, is_now')
     .order('sort')
   if (error) throw error
   return {
     range: '오후 · 13:00–18:00',
     slots: data.map((s) => ({
-      time: s.start_time,
-      name: s.patient_name,
-      desc: s.description,
-      bar: s.bar,
-      badge: s.badge_cls ? { cls: s.badge_cls, label: s.badge_label } : undefined,
-      tail: s.tail ?? undefined,
-      now: s.is_now,
+      id: s.id, time: s.start_time, name: s.patient_name, desc: s.description, status: s.status, now: s.is_now,
     })),
   }
+}
+
+export async function addAppointment({ a, sort = 0 }) {
+  if (!isSupabaseConfigured) return { ...a }
+  const { data, error } = await supabase
+    .from('appointments')
+    .insert({ sort, start_time: a.time, patient_name: a.name, description: a.desc, status: a.status || '예약', bar: 'sl-mut', is_now: false })
+    .select('id, start_time, patient_name, description, status, is_now')
+    .single()
+  if (error) throw error
+  return { id: data.id, time: data.start_time, name: data.patient_name, desc: data.description, status: data.status, now: data.is_now }
+}
+
+export async function updateAppointmentStatus({ id, status }) {
+  if (!isSupabaseConfigured || !id) return
+  const { error } = await supabase.from('appointments').update({ status }).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteAppointment({ id }) {
+  if (!isSupabaseConfigured || !id) return
+  const { error } = await supabase.from('appointments').delete().eq('id', id)
+  if (error) throw error
 }
 
 // ── queue (+ embedded patient detail) ───────────────────────────

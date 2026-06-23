@@ -7,7 +7,7 @@ export const navGroups = [
     items: [
       { icon: 'dashboard', label: '진료 대시보드', view: 'dashboard' },
       { icon: 'user', label: '환자 검색', view: 'search' },
-      { icon: 'calendar', label: '예약 관리', count: 26 },
+      { icon: 'calendar', label: '예약 관리', count: 26, view: 'appts' },
       { icon: 'checklist', label: '진료 대기열', count: 7 },
     ],
   },

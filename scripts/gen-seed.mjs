@@ -3,7 +3,7 @@
 import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
-import { clinic, doctor, kpis, schedule, queue, wards, admissions } from '../src/data/mock.js'
+import { clinic, doctor, kpis, schedule, queue, wards, admissions, apptPresentation } from '../src/data/mock.js'
 
 const __dir = dirname(fileURLToPath(import.meta.url))
 const out = resolve(__dir, '../supabase/seed.sql')
@@ -43,14 +43,14 @@ w(
 )
 w()
 
-// appointments
-w(`insert into appointments (sort, start_time, patient_name, description, bar, badge_cls, badge_label, tail, is_now) values`)
+// appointments (status = 단일 소스, 표현은 파생)
+w(`insert into appointments (sort, start_time, patient_name, description, status, bar, badge_cls, badge_label, tail, is_now) values`)
 w(
   schedule.slots
-    .map(
-      (s, i) =>
-        `  (${i}, ${q(s.time)}, ${q(s.name)}, ${q(s.desc)}, ${q(s.bar)}, ${q(s.badge?.cls ?? null)}, ${q(s.badge?.label ?? null)}, ${q(s.tail ?? null)}, ${b(s.now)})`
-    )
+    .map((s, i) => {
+      const pr = apptPresentation(s.status, s.now)
+      return `  (${i}, ${q(s.time)}, ${q(s.name)}, ${q(s.desc)}, ${q(s.status)}, ${q(pr.bar)}, ${q(pr.badgeCls ?? null)}, ${q(pr.badgeLabel ?? null)}, ${q(pr.tail ?? null)}, ${b(s.now)})`
+    })
     .join(',\n') + ';'
 )
 w()

@@ -19,16 +19,16 @@ insert into kpis (sort, tone, label, value, sub, delta, delta_tone) values
   (4, 't-crit', '고위험 환자', '3', '자살위험 평가 필요', null, null),
   (5, 't-ok', '담당 입원', '9', '폐쇄병동 · 격리 1', null, null);
 
-insert into appointments (sort, start_time, patient_name, description, bar, badge_cls, badge_label, tail, is_now) values
-  (0, '13:00', '윤도현', '재진 · 공황장애', 'sl-mut', 'b-done', '완료', null, false),
-  (1, '13:20', '오지안', '재진 · ADHD', 'sl-mut', 'b-done', '완료', null, false),
-  (2, '13:40', '정수민', '재진 · 우울장애', 'sl-acc', 'b-prog', '상담중', null, true),
-  (3, '14:00', '강하늘', '응급 · 자살위기 평가', 'sl-warn', null, null, '대기', false),
-  (4, '14:50', '임서윤', '초진면담 50분 · 불안', 'sl-mut', null, null, '예약', false),
-  (5, '15:40', '배준서', '심리상담 50분', 'sl-mut', null, null, '예약', false),
-  (6, '16:30', '한예린', '재진 · 양극성장애', 'sl-mut', null, null, '예약', false),
-  (7, '16:50', '조민재', '재진 · 조현병', 'sl-mut', null, null, '예약', false),
-  (8, '17:10', '신아윤', '재진 · 불면', 'sl-mut', null, null, '예약', false);
+insert into appointments (sort, start_time, patient_name, description, status, bar, badge_cls, badge_label, tail, is_now) values
+  (0, '13:00', '윤도현', '재진 · 공황장애', '완료', 'sl-mut', 'b-done', '완료', null, false),
+  (1, '13:20', '오지안', '재진 · ADHD', '완료', 'sl-mut', 'b-done', '완료', null, false),
+  (2, '13:40', '정수민', '재진 · 우울장애', '진행중', 'sl-acc', 'b-prog', '진행중', null, true),
+  (3, '14:00', '강하늘', '응급 · 자살위기 평가', '예약', 'sl-mut', null, null, '예약', false),
+  (4, '14:50', '임서윤', '초진면담 50분 · 불안', '예약', 'sl-mut', null, null, '예약', false),
+  (5, '15:40', '배준서', '심리상담 50분', '예약', 'sl-mut', null, null, '예약', false),
+  (6, '16:30', '한예린', '재진 · 양극성장애', '예약', 'sl-mut', null, null, '예약', false),
+  (7, '16:50', '조민재', '재진 · 조현병', '예약', 'sl-mut', null, null, '예약', false),
+  (8, '17:10', '신아윤', '재진 · 불면', '예약', 'sl-mut', null, null, '예약', false);
 
 insert into wards (sort, code, name, total_beds) values
   (0, '5A', '폐쇄병동 5A', 12),
