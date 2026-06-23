@@ -30,9 +30,11 @@ function matches(p, query) {
   return [p.name, p.chart, p.dx, p.rrn].some((v) => String(v || '').toLowerCase().includes(s))
 }
 
-export default function PatientQueue({ patients, selectedId, onSelect, search = '', live = false }) {
+export default function PatientQueue({ patients, selectedId, onSelect, search = '', live = false, diagnoses = [] }) {
   const [sort, setSort] = useState('대기순')
   const sorts = ['대기순', '접수순', '위험도']
+
+  const dxMap = useMemo(() => new Map(diagnoses.map((d) => [d.code, d])), [diagnoses])
 
   const view = useMemo(() => {
     const filtered = patients.filter((p) => matches(p, search))
@@ -105,7 +107,15 @@ export default function PatientQueue({ patients, selectedId, onSelect, search = 
                   </td>
                   <td>{p.type}</td>
                   <td>
-                    <span className="dx">{p.dx}</span>
+                    {(() => {
+                      const d = dxMap.get(p.dx)
+                      return (
+                        <span title={d ? `${p.dx} · ${d.ko} · ${d.dsm}` : p.dx}>
+                          <span className="dx">{p.dx}</span>
+                          {d && <span className="dx-ko">{d.ko}</span>}
+                        </span>
+                      )
+                    })()}
                   </td>
                   <td className="ref">{p.received}</td>
                   <td>

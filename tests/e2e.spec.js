@@ -295,6 +295,24 @@ test.describe('정신과 EMR 대시보드 (mock 모드)', () => {
     await expect(page.locator('.dx-opt')).not.toContainText('F31.81')
   })
 
+  test('환자 패널·대기열 — dx 코드에 한글 진단명 동반 표시', async ({ page }) => {
+    await page.goto('/')
+    // 기본 선택 환자(정수민, F33.1) 패널: 코드 + KCD 한글명
+    const dx = page.locator('.pt-dx')
+    await expect(dx).toContainText('F33.1')
+    await expect(dx).toContainText('재발성 우울장애')
+
+    // 대기열 행: 코드 아래 한글명(조민재 F20.0 편집조현병)
+    const row = page.locator('.qrow', { hasText: '조민재' })
+    await expect(row.locator('.dx')).toHaveText('F20.0')
+    await expect(row.locator('.dx-ko')).toHaveText('편집조현병')
+
+    // 다른 환자 선택 시 패널 진단 갱신(임서윤 F41.1 범불안장애)
+    await page.locator('.qrow', { hasText: '임서윤' }).click()
+    await expect(dx).toContainText('F41.1')
+    await expect(dx).toContainText('범불안장애')
+  })
+
   test('대기열 행을 클릭하면 환자 패널이 바뀐다', async ({ page }) => {
     await page.goto('/')
     await page.locator('.qrow', { hasText: '강하늘' }).click()

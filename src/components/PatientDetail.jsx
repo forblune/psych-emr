@@ -13,6 +13,7 @@ const TABS = [
 
 export default function PatientDetail({
   patient,
+  diagnoses = [],
   onAddNote,
   onAddRx,
   onUpdateNote,
@@ -30,6 +31,7 @@ export default function PatientDetail({
   if (!patient) return null
   const Active = TABS.find((t) => t.key === tab).Comp
   const c = patient.chart
+  const dx = diagnoses.find((d) => d.code === patient.dx) || null
 
   return (
     <section className="card" style={{ gridRow: 1 }}>
@@ -42,6 +44,17 @@ export default function PatientDetail({
               {patient.sex} · <span className="num">{patient.age}세</span> · 차트{' '}
               <span className="num">{patient.chart}</span> · 주민 <span className="num">{patient.rrn}</span>
             </div>
+            {patient.dx && (
+              <div className="pt-dx" title={dx ? `${patient.dx} · ${dx.ko} · ${dx.dsm}` : patient.dx}>
+                <span className="legal lg-vol">{patient.dx}</span>
+                {dx && (
+                  <span className="pt-dx-name">
+                    {dx.ko}
+                    <span className="pt-dx-dsm"> · {dx.dsm}</span>
+                  </span>
+                )}
+              </div>
+            )}
             <div className="pt-tags">
               {patient.tags.map((t) => (
                 <span className={`tag${/위험|위기|응급|의심/.test(t) ? ' risk' : ''}`} key={t}>

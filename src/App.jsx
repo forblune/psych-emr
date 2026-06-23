@@ -486,9 +486,11 @@ export default function App() {
             onSelect={setSelectedId}
             search={search}
             live={realtimeOn}
+            diagnoses={data.diagnoses}
           />
           <PatientDetail
             patient={selected}
+            diagnoses={data.diagnoses}
             onAddNote={handleAddNote}
             onAddRx={handleAddRx}
             onUpdateNote={handleUpdateNote}
