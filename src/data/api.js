@@ -159,6 +159,94 @@ export async function markBillingPaid({ id }) {
   if (error) throw error
 }
 
+// ── 약품 · 재고 ─────────────────────────────────────────────────
+// 유효임박 기준 = 임상일 + 3개월. expiry 는 'YYYY-MM' 텍스트(사전식 = 시간순).
+export function expiryThreshold(clinicDate) {
+  const [y, m] = String(clinicDate || '2026-06').split('-').map(Number)
+  const t = m + 3
+  return `${y + Math.floor((t - 1) / 12)}-${String(((t - 1) % 12) + 1).padStart(2, '0')}`
+}
+
+// 단일 약품의 파생 상태(목록 칩·필터에서 사용).
+export function medFlags(m, threshold) {
+  return {
+    low: m.stock <= m.min,
+    expiring: Boolean(m.expiry) && m.expiry <= threshold,
+    controlled: Boolean(m.controlled),
+  }
+}
+
+function medSummaryRows(rows, threshold) {
+  return {
+    total: rows.length,
+    low: rows.filter((m) => m.stock <= m.min).length,
+    expiring: rows.filter((m) => m.expiry && m.expiry <= threshold).length,
+    controlled: rows.filter((m) => m.controlled).length,
+    totalUnits: rows.reduce((n, m) => n + (m.stock || 0), 0),
+  }
+}
+
+// mock 합계는 임상일(mock.clinic.date) 기준 임박을 계산.
+export function summarizeMeds(rows, threshold = expiryThreshold(mock.clinic.date)) {
+  return medSummaryRows(rows, threshold)
+}
+
+export async function getMedications() {
+  if (!isSupabaseConfigured) return mock.medications.map((m) => ({ ...m }))
+  const { data, error } = await supabase
+    .from('medications')
+    .select('id, code, name, drug_class, unit, stock, min_stock, expiry, controlled')
+    .order('sort')
+  if (error) throw error
+  return data.map((m) => ({
+    id: m.id, code: m.code, name: m.name, drugClass: m.drug_class, unit: m.unit,
+    stock: m.stock, min: m.min_stock, expiry: m.expiry, controlled: m.controlled,
+  }))
+}
+
+export async function getMedSummary() {
+  if (!isSupabaseConfigured) return summarizeMeds(mock.medications)
+  const { data, error } = await supabase.from('med_summary').select('*').single()
+  if (error) throw error
+  return {
+    total: data.total, low: data.low, expiring: data.expiring,
+    controlled: data.controlled, totalUnits: data.total_units,
+  }
+}
+
+export async function addMedication({ med, sort = 0 }) {
+  if (!isSupabaseConfigured) return { ...med }
+  const { data, error } = await supabase
+    .from('medications')
+    .insert({
+      sort, code: med.code, name: med.name, drug_class: med.drugClass, unit: med.unit,
+      stock: med.stock, min_stock: med.min, expiry: med.expiry || null, controlled: med.controlled,
+    })
+    .select('id, code, name, drug_class, unit, stock, min_stock, expiry, controlled')
+    .single()
+  if (error) throw error
+  return {
+    id: data.id, code: data.code, name: data.name, drugClass: data.drug_class, unit: data.unit,
+    stock: data.stock, min: data.min_stock, expiry: data.expiry, controlled: data.controlled,
+  }
+}
+
+// 입고(+)·불출(−) 후의 절대 재고를 저장. 음수 방지는 호출부에서.
+export async function updateMedStock({ id, stock }) {
+  if (!isSupabaseConfigured || !id) return
+  const { error } = await supabase
+    .from('medications')
+    .update({ stock, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteMedication({ id }) {
+  if (!isSupabaseConfigured || !id) return
+  const { error } = await supabase.from('medications').delete().eq('id', id)
+  if (error) throw error
+}
+
 // ── 신규 환자 접수 (신규 진료 시작) ─────────────────────────────
 function nowHHMM() {
   const d = new Date()

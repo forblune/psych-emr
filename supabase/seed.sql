@@ -3,7 +3,7 @@
 begin;
 truncate clinics, doctors, patients, queue_entries, safety_assessments,
   rating_scales, trend_points, labs, prescriptions, clinical_notes,
-  patient_detail_meta, appointments, kpis, wards, admissions, billings restart identity cascade;
+  patient_detail_meta, appointments, kpis, wards, admissions, billings, medications restart identity cascade;
 
 insert into clinics (hospital, department, room, session, display_date) values
   ('메디코어', '정신건강의학과', '제2진료실', '2026-06-22 오후 진료', '2026-06-22 (월)');
@@ -278,5 +278,19 @@ insert into billings (sort, patient_id, attending_id, insurance, consult_fee, dr
   (4, (select id from patients where chart_no='00210073'), (select id from doctors order by ext_id limit 1), '의료급여', 12000, 16800, 22000, 1500, '미수납'),
   (5, (select id from patients where chart_no='00904471'), (select id from doctors order by ext_id limit 1), '건강보험', 12000, 28000, 12000, 15600, '수납완료'),
   (6, (select id from patients where chart_no='00118802'), (select id from doctors order by ext_id limit 1), '자비', 12000, 30000, 24000, 66000, '미수납');
+
+-- ── 약품·재고 ──
+insert into medications (sort, code, name, drug_class, unit, stock, min_stock, expiry, controlled) values
+  (0, 'A11800231', '에스시탈로프람 10mg', 'SSRI', '정', 520, 200, '2027-05', false),
+  (1, 'A11700118', '설트랄린 50mg', 'SSRI', '정', 340, 150, '2027-02', false),
+  (2, 'A22310044', '둘록세틴 30mg', 'SNRI', '캡슐', 185, 100, '2026-11', false),
+  (3, 'A31900207', '쿠에티아핀 25mg', '항정신병', '정', 90, 120, '2027-08', false),
+  (4, 'A31900512', '아리피프라졸 10mg', '항정신병', '정', 260, 100, '2027-01', false),
+  (5, 'A40110083', '리튬카보네이트 300mg', '기분조절제', '정', 150, 80, '2026-09', false),
+  (6, 'A40110159', '발프로산나트륨 500mg', '기분조절제', '정', 200, 100, '2027-04', false),
+  (7, 'B05500071', '로라제팜 1mg', '벤조디아제핀', '정', 60, 100, '2026-12', true),
+  (8, 'B05500088', '클로나제팜 0.5mg', '벤조디아제핀', '정', 220, 80, '2027-06', true),
+  (9, 'B06200140', '졸피뎀 10mg', '수면제', '정', 140, 80, '2027-03', true),
+  (10, 'B07700233', '메틸페니데이트 18mg', '정신자극제', '정', 95, 60, '2026-08', true);
 
 commit;

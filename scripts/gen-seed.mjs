@@ -3,7 +3,7 @@
 import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
-import { clinic, doctor, kpis, schedule, queue, wards, admissions, billings, apptPresentation } from '../src/data/mock.js'
+import { clinic, doctor, kpis, schedule, queue, wards, admissions, billings, medications, apptPresentation } from '../src/data/mock.js'
 
 const __dir = dirname(fileURLToPath(import.meta.url))
 const out = resolve(__dir, '../supabase/seed.sql')
@@ -23,7 +23,7 @@ w('-- 재생성:  node scripts/gen-seed.mjs')
 w('begin;')
 w('truncate clinics, doctors, patients, queue_entries, safety_assessments,')
 w('  rating_scales, trend_points, labs, prescriptions, clinical_notes,')
-w('  patient_detail_meta, appointments, kpis, wards, admissions, billings restart identity cascade;')
+w('  patient_detail_meta, appointments, kpis, wards, admissions, billings, medications restart identity cascade;')
 w()
 
 // clinic + doctor
@@ -141,6 +141,19 @@ w(
     .map(
       (bl, i) =>
         `  (${i}, (select id from patients where chart_no=${q(bl.chart)}), (select id from doctors order by ext_id limit 1), ${q(bl.insurance)}, ${n(bl.consult)}, ${n(bl.drug)}, ${n(bl.test)}, ${n(bl.copay)}, ${q(bl.status)})`
+    )
+    .join(',\n') + ';'
+)
+w()
+
+// medications (약품·재고 마스터)
+w(`-- ── 약품·재고 ──`)
+w(`insert into medications (sort, code, name, drug_class, unit, stock, min_stock, expiry, controlled) values`)
+w(
+  medications
+    .map(
+      (m, i) =>
+        `  (${i}, ${q(m.code)}, ${q(m.name)}, ${q(m.drugClass)}, ${q(m.unit)}, ${n(m.stock)}, ${n(m.min)}, ${q(m.expiry)}, ${b(m.controlled)})`
     )
     .join(',\n') + ';'
 )

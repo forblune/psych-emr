@@ -8,7 +8,7 @@
 ## 한 줄 요약
 ERP 스타일 정신과 진료 EMR. HTML 목업 → React → Supabase → 역할 기반 Auth/RLS →
 임상 데이터 CRUD(노트·처방·척도·검사) → Realtime → 입원·병동 + 입퇴원 CRUD →
-KPI 집계뷰 → 예약·청구 모듈 → **화면 6종(대시보드·예약·병동·통계·검색·청구)** 까지 완료.
+KPI 집계뷰 → 예약·청구 모듈 → **화면 7종(대시보드·예약·병동·통계·검색·청구·약품)** 까지 완료.
 데이터는 전부 가상. 라이브 데모: https://forblune.github.io/psych-emr/
 
 ---
@@ -62,7 +62,7 @@ KPI 집계뷰 → 예약·청구 모듈 → **화면 6종(대시보드·예약·
 | `b6426d5` | 예약 관리 화면 (예약 상태 모델링) |
 | `bc65427` | 청구·수납 모듈 |
 
-> 마이그레이션 `0001~0015`, E2E **29/29**, **화면 6종**(대시보드·예약·병동·통계·검색·청구), 임상 데이터 4종 + 입원 CRUD + 신규 접수 + 예약·청구 + 담당의별 RLS + Realtime(큐·노트·처방·입원).
+> 마이그레이션 `0001~0016`, E2E **33/33**, **화면 7종**(대시보드·예약·병동·통계·검색·청구·약품), 임상 데이터 4종 + 입원 CRUD + 신규 접수 + 예약·청구 + 약품·재고(입고·불출·등록·삭제) + 담당의별 RLS + Realtime(큐·노트·처방·입원).
 
 ---
 
@@ -117,7 +117,7 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
 ## 전체 테스트 (2026-06-22)
 - **빌드**: `npm run build` 무에러 (89→ 모듈)
 - **DB/RLS**: 신규 클러스터에 0001→0002→seed 재적용 무에러 + RLS 매트릭스 재통과(담당의 7 / 타의사 0 / admin 7 / anon 0)
-- **E2E (Playwright/Chromium, mock 모드)**: `npm test` → **29/29 통과, 콘솔 에러 0**
+- **E2E (Playwright/Chromium, mock 모드)**: `npm test` → **33/33 통과, 콘솔 에러 0**
   - 렌더 / KPI / 통계 / 환자 검색 / 예약 관리 / 청구·수납(수납 처리) / 새로고침 / 신규 진료 / 입원·병동·등록·퇴원 / 환자 전환 / 탭4 / 테마 / 대기열 검색·정렬 / 노트·처방·척도·검사 CRUD
   - ⚠️ viewport는 1440×900 고정(`playwright.config.js`) — 720px면 밀집 레이아웃에서 탭과 겹쳐 클릭 인터셉트됨
 - **배포 사이트 렌더**: https://forblune.github.io/psych-emr/ 헤드리스 확인 — KPI6·행7·정수민·다크·에러0
@@ -153,6 +153,7 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
 - **환자 검색 화면** (`PatientSearch.jsx`) — 사이드바 "환자 검색" → 화면 전환. 외래(큐)+입원(admissions) **통합 검색**(이름·차트·F코드), 구분 필터(전체/외래/입원). 결과 "열기" → 외래는 대시보드+환자 선택, 입원은 병동으로 이동(`onOpen(view, chart)` → App `setView/setSelectedId`). TopBar 글로벌 검색어를 초기값으로 이어받음. 클라이언트 집계, 새 마이그레이션 없음.
 - **예약 관리 화면** (`Appointments.jsx`) — `0014_appointments.sql`: appointments 에 status(예약/진행중/완료/취소/노쇼) + 쓰기 RLS. **상태가 단일 소스** → 표현(배지/바)은 `apptPresentation()`으로 대시보드 일정·예약관리 공용 파생. 상태 카운트 stat + 행별 상태변경(select)·삭제 + 예약 추가. `dashboard_kpis` 의 금일예약 완료 집계를 status='완료' 기준으로 변경. **로컬 검증**: 상태변경/추가/삭제 시 KPI 즉시 반영.
 - **청구·수납 모듈** (`Billing.jsx`) — `0015_billing.sql`: billings(진찰료/약제비/검사료 + 보험유형 + 본인부담금 + 수납상태) + RLS(담당의) + billing_summary 뷰. 요약 stat 5종(청구건수·수납완료·미수납·금일 수납액·미수금) + 보험 배지 + 행별 **수납 처리**(update). 변경 시 요약 즉시 재계산. **로컬 검증**: 총7·완료3·미수금₩104,649 → 수납 시 미수금 감소 / 타 의사 0건·UPDATE 0(격리).
+- **약품·재고 모듈** (`Medications.jsx`) — `0016_medications.sql`: medications(분류·단위·재고·안전재고·유효기간 + 향정신성 controlled) + RLS(읽기 전체, 쓰기 admin/nurse) + med_summary 뷰. 요약 stat 5종(총품목·재고부족·유효임박·향정신성·총 재고수량) + 분류 칩 + 상태 배지(재고부족/유효임박/향정/정상). 행별 **입고·불출**(수량 입력 → 절대재고 update, 음수 방지) + **약품 등록**(insert) + **삭제**. `재고부족`=stock≤안전재고, `유효임박`=expiry≤임상일+3개월(YYYY-MM 사전식 비교). 변경 시 요약 즉시 재계산. mock 11품목(재고부족 2·유효임박 2·향정 4).
 
 ## 아직 안 된 것
 - 미검증(서비스 레이어, SQL 아님): 호스팅 GoTrue 이메일 인증, PostgREST 임베딩 응답 shape, 실시간 수신 → 본인 Supabase에 올린 뒤 로그인 1회로 확인 권장
@@ -173,9 +174,9 @@ React(Vite)  ──>  data/api.js (seam)  ──>  Supabase  (env 있을 때)
 
 ## 다음 단계 (우선순위)
 
-1. 화면 추가: 약품·재고.
-2. 환자 검색을 patients 테이블 직접 조회로(현재 오늘 큐+입원 범위).
-3. 예약 날짜 선택(현재 당일), 예약↔진료 연동, 청구 자동 생성(진료 시).
+1. 환자 검색을 patients 테이블 직접 조회로(현재 오늘 큐+입원 범위).
+2. 예약 날짜 선택(현재 당일), 예약↔진료 연동, 청구 자동 생성(진료 시).
+3. 약품·재고 ↔ 처방 연동(처방 시 재고 자동 차감), 입·출고 이력 로그.
 
 ---
 
@@ -188,7 +189,7 @@ npm run dev            # http://localhost:5173  (env 없으면 mock)
 
 # Supabase 붙이려면 (README 참고):
 cp .env.example .env   # URL/anon key 채우기
-# SQL Editor: 0001 → … → 0015 → seed 순서로 실행
+# SQL Editor: 0001 → … → 0016 → seed 순서로 실행
 # 앱에서 가입 → 로그인
 
 # 데이터 수정 후 seed 재생성:
@@ -205,9 +206,9 @@ node scripts/gen-seed.mjs
 - 디자인 토큰/테마 → `src/theme.css`
 - 데이터 모양 바꾸기 → `src/data/mock.js` (+ `gen-seed.mjs` 재실행)
 - 백엔드 쿼리/매핑/쓰기(CRUD) → `src/data/api.js`
-- DB 스키마/정책 → `supabase/migrations/*.sql` (0001~0015)
+- DB 스키마/정책 → `supabase/migrations/*.sql` (0001~0016)
 - 인증 흐름 → `src/context/AuthContext.jsx`, `src/components/Login.jsx`
-- 화면 전환 → `App.jsx` `view` (dashboard/appts/ward/stats/search/billing), 사이드바 `data/config.js`
-- 화면 컴포넌트 → `src/components/**` (탭: `tabs/**`; 화면: `Ward`/`Stats`/`PatientSearch`/`Appointments`/`Billing`/`NewVisit`)
+- 화면 전환 → `App.jsx` `view` (dashboard/appts/ward/stats/search/billing/meds), 사이드바 `data/config.js`
+- 화면 컴포넌트 → `src/components/**` (탭: `tabs/**`; 화면: `Ward`/`Stats`/`PatientSearch`/`Appointments`/`Billing`/`Medications`/`NewVisit`)
 - 척도 중증도 분류 로직 → `src/lib/scales.js`
 - E2E 테스트 → `tests/e2e.spec.js` (`npm test`, viewport 1440×900 고정)

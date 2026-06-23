@@ -11,6 +11,7 @@ import Stats from './components/Stats'
 import PatientSearch from './components/PatientSearch'
 import Appointments from './components/Appointments'
 import Billing from './components/Billing'
+import Medications from './components/Medications'
 import NewVisit from './components/NewVisit'
 import Login from './components/Login'
 import { useAuth } from './context/AuthContext'
@@ -50,16 +51,22 @@ import {
   getBillingSummary,
   markBillingPaid,
   summarizeBilling,
+  getMedications,
+  getMedSummary,
+  summarizeMeds,
+  addMedication,
+  updateMedStock,
+  deleteMedication,
 } from './data/api'
 
 async function loadAll() {
-  const [clinic, doctor, kpis, navGroups, queue, schedule, systemStatus, wards, admissions, wardSummary, billings, billingSummary] =
+  const [clinic, doctor, kpis, navGroups, queue, schedule, systemStatus, wards, admissions, wardSummary, billings, billingSummary, medications, medSummary] =
     await Promise.all([
       getClinic(), getDoctor(), getKpis(), getNavGroups(), getQueue(),
       getSchedule(), getSystemStatus(), getWards(), getAdmissions(), getWardSummary(),
-      getBillings(), getBillingSummary(),
+      getBillings(), getBillingSummary(), getMedications(), getMedSummary(),
     ])
-  return { clinic, doctor, kpis, navGroups, queue, schedule, systemStatus, wards, admissions, wardSummary, billings, billingSummary }
+  return { clinic, doctor, kpis, navGroups, queue, schedule, systemStatus, wards, admissions, wardSummary, billings, billingSummary, medications, medSummary }
 }
 
 export default function App() {
@@ -333,6 +340,29 @@ export default function App() {
     setData((prev) => ({ ...prev, billings: next, billingSummary: summarizeBilling(next) }))
   }
 
+  // ── 약품 · 재고 ──
+  function setMeds(next) {
+    setData((prev) => ({ ...prev, medications: next, medSummary: summarizeMeds(next) }))
+  }
+  async function handleAddMed(med) {
+    const created = await addMedication({ med, sort: data.medications.length })
+    setMeds([...data.medications, created])
+  }
+  async function handleAdjustMed(index, delta) {
+    const m = data.medications[index]
+    if (!m) return
+    const stock = Math.max(0, m.stock + delta)
+    if (stock === m.stock) return
+    await updateMedStock({ id: m.id, stock })
+    setMeds(data.medications.map((it, i) => (i === index ? { ...it, stock } : it)))
+  }
+  async function handleDeleteMed(index) {
+    const m = data.medications[index]
+    if (!m) return
+    await deleteMedication({ id: m.id })
+    setMeds(data.medications.filter((_, i) => i !== index))
+  }
+
   async function refresh() {
     setRefreshing(true)
     try {
@@ -388,6 +418,15 @@ export default function App() {
         />
       ) : view === 'billing' ? (
         <Billing billings={data.billings} summary={data.billingSummary} onMarkPaid={handleMarkPaid} />
+      ) : view === 'meds' ? (
+        <Medications
+          medications={data.medications}
+          summary={data.medSummary}
+          clinicDate={data.clinic.date}
+          onAdd={handleAddMed}
+          onAdjust={handleAdjustMed}
+          onDelete={handleDeleteMed}
+        />
       ) : view === 'search' ? (
         <PatientSearch
           queue={data.queue}

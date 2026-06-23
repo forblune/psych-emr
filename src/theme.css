@@ -325,6 +325,14 @@ td.ta-r{font-variant-numeric:tabular-nums;}
   border:1px solid var(--line);border-radius:6px;padding:3px 6px;}
 .appt-status:focus{outline:none;border-color:var(--accent);}
 
+/* MEDICATIONS · 약품·재고 */
+.badge-stack{display:inline-flex;flex-wrap:wrap;gap:3px;}
+.stock-adj{display:inline-flex;align-items:center;gap:4px;}
+.stock-qty{width:52px;text-align:right;padding:3px 6px;}
+.stock-qty::-webkit-inner-spin-button,.stock-qty::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+.chk-field{flex-direction:row;align-items:center;gap:6px;}
+.chk-field input{width:auto;}
+
 /* PATIENT SEARCH */
 .search-screen{flex:1;display:flex;flex-direction:column;gap:12px;padding:12px 14px;min-height:0;overflow:hidden;}
 .search-bar{display:flex;gap:10px;align-items:center;}

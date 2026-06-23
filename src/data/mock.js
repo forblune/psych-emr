@@ -119,6 +119,22 @@ export const billings = [
   { chart: '00118802', name: '백서진', insurance: '자비', consult: 12000, drug: 30000, test: 24000, copay: 66000, status: '미수납' },
 ]
 
+// 약품·재고 (병원 약제 마스터). stock<=min → 재고부족, expiry<=임상일+3개월 → 유효임박,
+// controlled → 향정신성의약품(별도 관리·잠금). 임상일 기준 2026-06-23.
+export const medications = [
+  { code: 'A11800231', name: '에스시탈로프람 10mg', drugClass: 'SSRI', unit: '정', stock: 520, min: 200, expiry: '2027-05', controlled: false },
+  { code: 'A11700118', name: '설트랄린 50mg', drugClass: 'SSRI', unit: '정', stock: 340, min: 150, expiry: '2027-02', controlled: false },
+  { code: 'A22310044', name: '둘록세틴 30mg', drugClass: 'SNRI', unit: '캡슐', stock: 185, min: 100, expiry: '2026-11', controlled: false },
+  { code: 'A31900207', name: '쿠에티아핀 25mg', drugClass: '항정신병', unit: '정', stock: 90, min: 120, expiry: '2027-08', controlled: false },
+  { code: 'A31900512', name: '아리피프라졸 10mg', drugClass: '항정신병', unit: '정', stock: 260, min: 100, expiry: '2027-01', controlled: false },
+  { code: 'A40110083', name: '리튬카보네이트 300mg', drugClass: '기분조절제', unit: '정', stock: 150, min: 80, expiry: '2026-09', controlled: false },
+  { code: 'A40110159', name: '발프로산나트륨 500mg', drugClass: '기분조절제', unit: '정', stock: 200, min: 100, expiry: '2027-04', controlled: false },
+  { code: 'B05500071', name: '로라제팜 1mg', drugClass: '벤조디아제핀', unit: '정', stock: 60, min: 100, expiry: '2026-12', controlled: true },
+  { code: 'B05500088', name: '클로나제팜 0.5mg', drugClass: '벤조디아제핀', unit: '정', stock: 220, min: 80, expiry: '2027-06', controlled: true },
+  { code: 'B06200140', name: '졸피뎀 10mg', drugClass: '수면제', unit: '정', stock: 140, min: 80, expiry: '2027-03', controlled: true },
+  { code: 'B07700233', name: '메틸페니데이트 18mg', drugClass: '정신자극제', unit: '정', stock: 95, min: 60, expiry: '2026-08', controlled: true },
+]
+
 // ── detail builders ──────────────────────────────────────────
 const QTC = (v, f = 'f-n') => ({ name: 'QTc (ECG)', val: v, ref: '<450 ms', flag: 'QTc', flagType: f })
 
