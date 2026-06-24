@@ -15,7 +15,7 @@ export const navGroups = [
     title: '평가 · 치료',
     items: [
       { icon: 'pill', label: '처방 · 오더' },
-      { icon: 'chart', label: '심리평가 · 척도', count: 5, crit: true },
+      { icon: 'chart', label: '심리평가 · 척도', count: 4, crit: true, view: 'scale-demo' },
       { icon: 'chat', label: '상담 · 면담 기록' },
       { icon: 'hospital', label: '입원 · 폐쇄병동', count: 9, view: 'ward' },
     ],

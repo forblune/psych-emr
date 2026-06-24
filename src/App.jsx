@@ -12,6 +12,7 @@ import PatientSearch from './components/PatientSearch'
 import Appointments from './components/Appointments'
 import Billing from './components/Billing'
 import Medications from './components/Medications'
+import ScaleDemo from './components/ScaleDemo'
 import NewVisit from './components/NewVisit'
 import Login from './components/Login'
 import { useAuth } from './context/AuthContext'
@@ -496,6 +497,8 @@ export default function App() {
           onAdjust={handleAdjustMed}
           onDelete={handleDeleteMed}
         />
+      ) : view === 'scale-demo' ? (
+        <ScaleDemo />
       ) : view === 'search' ? (
         <PatientSearch
           queue={data.queue}
