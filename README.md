@@ -5,7 +5,7 @@ MindHub Psych EMR은 MindHub의 의사용 정신건강의학과 EMR 프로토타
 
 ERP 스타일 정신과 진료 EMR. 단일 HTML 목업 → React 컴포넌트 + mock 데이터로 시작해,
 Supabase(역할 기반 RLS)·Realtime·임상 CRUD까지 확장한 프로토타입.
-데이터는 전부 가상. 라이브 데모: https://forblune.github.io/psych-emr/
+데이터는 전부 가상. 라이브 데모: https://forblune.github.io/mindhub-psych-emr/
 
 ## 화면 (8종)
 
